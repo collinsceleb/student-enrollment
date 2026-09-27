@@ -125,6 +125,48 @@ export interface Database {
           },
         ];
       };
+      admin_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          role: Database["public"]["Enums"]["admin_role"];
+          faculty_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          role: Database["public"]["Enums"]["admin_role"];
+          faculty_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          role?: Database["public"]["Enums"]["admin_role"];
+          faculty_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "admin_profiles_faculty_id_fkey";
+            columns: ["faculty_id"];
+            isOneToOne: false;
+            referencedRelation: "faculties";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "admin_profiles_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -134,6 +176,7 @@ export interface Database {
     };
     Enums: {
       admission_type: "JAMBITE" | "DIRECT_ENTRY";
+      admin_role: "SUPER_ADMIN" | "FACULTY_ADMIN";
     };
     CompositeTypes: {
       [_ in never]: never;
