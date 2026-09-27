@@ -5,10 +5,13 @@ import {
   filterStudentsForFacultyDashboard,
 } from "@/features/faculty/faculty.service";
 import { getCurrentAdminProfile } from "@/features/auth/auth.service";
+import { FacultyAdminManagementPanel } from "@/features/administration/faculty-admin-management-panel";
+import { getFacultyAdministrators } from "@/features/administration/faculty-admin-management.service";
 import { DepartmentManagementPanel } from "@/features/department/department-management-panel";
 import { getDepartmentsByFaculty } from "@/features/department/department.service";
 import { FacultyManagementPanel } from "@/features/faculty/faculty-management-panel";
 import { getStudentsByFacultyPage } from "@/features/students/student.service";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { formatStudentFullName, type AdmissionType } from "@/types/student";
 
@@ -24,6 +27,8 @@ export default async function AdminDashboardPage({
     facultyError?: string;
     departmentStatus?: string;
     departmentError?: string;
+    facultyAdminStatus?: string;
+    facultyAdminError?: string;
   }>;
 }>) {
   const supabaseClient = await createClient();
@@ -274,10 +279,11 @@ export default async function AdminDashboardPage({
     redirect("/login");
   }
 
+  const adminClient = createAdminClient();
   const [
     facultiesResult,
     departmentsResult,
-    facultyAdminsResult,
+    facultyAdmins,
     studentsResult,
     superAdminsResult,
   ] = await Promise.all([
@@ -289,11 +295,7 @@ export default async function AdminDashboardPage({
       .from("departments")
       .select("id, name, code, faculty_id")
       .order("name", { ascending: true }),
-    supabaseClient
-      .from("admin_profiles")
-      .select("id, user_id, faculty_id, role")
-      .eq("role", "FACULTY_ADMIN")
-      .order("faculty_id", { ascending: true }),
+    getFacultyAdministrators(adminClient),
     supabaseClient
       .from("students")
       .select(
@@ -311,7 +313,6 @@ export default async function AdminDashboardPage({
 
   const faculties = facultiesResult.data ?? [];
   const departments = departmentsResult.data ?? [];
-  const facultyAdmins = facultyAdminsResult.data ?? [];
   const students = studentsResult.data ?? [];
   const superAdmins = superAdminsResult.data ?? [];
 
@@ -407,43 +408,12 @@ export default async function AdminDashboardPage({
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2">
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="mb-4 text-xl font-semibold text-slate-900">
-              Faculty Administrators
-            </h2>
-            <div className="space-y-3">
-              {facultyAdmins.length === 0 ? (
-                <p className="text-sm text-slate-500">
-                  No faculty administrators assigned.
-                </p>
-              ) : (
-                facultyAdmins.map((admin) => {
-                  const facultyName =
-                    faculties.find((faculty) => faculty.id === admin.faculty_id)
-                      ?.name ?? "Unassigned faculty";
-
-                  return (
-                    <div
-                      key={admin.id}
-                      className="flex items-center justify-between rounded-xl border border-slate-200 p-3"
-                    >
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          Administrator #{admin.id.slice(0, 8)}
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          User ID: {admin.user_id.slice(0, 8)}
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
-                        {facultyName}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
+          <FacultyAdminManagementPanel
+            administrators={facultyAdmins}
+            faculties={faculties}
+            status={resolvedSearchParams.facultyAdminStatus}
+            error={resolvedSearchParams.facultyAdminError}
+          />
 
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <h2 className="mb-4 text-xl font-semibold text-slate-900">
