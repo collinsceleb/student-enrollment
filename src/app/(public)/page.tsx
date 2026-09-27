@@ -1,10 +1,10 @@
+import { StudentEnrollmentForm } from "@/features/enrollment/student-enrollment-form";
 import {
   getPublicDepartmentOptions,
   getPublicFacultyOptions,
 } from "@/features/enrollment/enrollment.service";
-import { StudentEnrollmentForm } from "@/features/enrollment/student-enrollment-form";
 
-export default async function HomePage() {
+export default async function PublicEnrollmentPage() {
   const [faculties, departments] = await Promise.all([
     getPublicFacultyOptions(),
     getPublicDepartmentOptions(),

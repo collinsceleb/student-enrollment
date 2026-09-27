@@ -37,11 +37,11 @@ export const studentSchema = z.object({
   faculty_id: z
     .string()
     .min(1, "Faculty is required")
-    .uuid("Invalid faculty selection"),
+    .pipe(z.uuid({ error: "Invalid faculty selection" })),
   department_id: z
     .string()
     .min(1, "Department is required")
-    .uuid("Invalid department selection"),
+    .pipe(z.uuid({ error: "Invalid department selection" })),
   admission_type: z.preprocess((val) => {
     if (typeof val === "string") {
       const normalized = val.trim().toUpperCase().replace(/\s+/g, "_");
