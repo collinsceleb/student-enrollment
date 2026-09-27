@@ -32,7 +32,8 @@ export default async function AdminDashboardPage({
     redirect("/login");
   }
 
-  const resolvedSearchParams = searchParams !== undefined ? await searchParams : {};
+  const resolvedSearchParams =
+    searchParams !== undefined ? await searchParams : {};
 
   if (profile.data.role === "FACULTY_ADMIN") {
     const facultyId = profile.data.faculty_id;
@@ -41,7 +42,10 @@ export default async function AdminDashboardPage({
       redirect("/login");
     }
 
-    const departments = await getDepartmentsByFaculty(supabaseClient, facultyId);
+    const departments = await getDepartmentsByFaculty(
+      supabaseClient,
+      facultyId
+    );
     const allStudents = await getStudentsByFaculty(supabaseClient, {
       facultyId,
     });
@@ -49,7 +53,8 @@ export default async function AdminDashboardPage({
     const filteredStudents = filterStudentsForFacultyDashboard(allStudents, {
       search: resolvedSearchParams.search,
       departmentId: resolvedSearchParams.department,
-      admissionType: resolvedSearchParams.admissionType as AdmissionType | undefined,
+      admissionType: resolvedSearchParams.admissionType as
+        AdmissionType | undefined,
     });
 
     const summary = buildFacultyDashboardSummary(filteredStudents);
