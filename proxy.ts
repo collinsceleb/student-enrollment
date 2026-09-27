@@ -1,10 +1,8 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-const AUTH_PATHS = ["/login"];
-const ADMIN_PATHS = ["/admin"];
+const ADMIN_PATHS = ["/admin", "/admin/:path*"];
 
-export async function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/api/")) {
@@ -12,8 +10,11 @@ export async function middleware(request: NextRequest) {
   }
 
   const isAdminRoute = ADMIN_PATHS.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+    (pattern) =>
+      pattern === "/admin" && pathname === "/admin" ||
+      pattern === "/admin/:path*" && (pathname === "/admin" || pathname.startsWith("/admin/"))
   );
+
   if (!isAdminRoute) {
     return NextResponse.next();
   }
@@ -22,13 +23,12 @@ export async function middleware(request: NextRequest) {
   const refreshToken = request.cookies.get("sb-refresh-token")?.value;
 
   if (!accessToken && !refreshToken) {
-    const url = new URL("/login", request.url);
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/login"],
+  matcher: ["/admin/:path*"],
 };
