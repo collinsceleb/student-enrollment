@@ -1,10 +1,7 @@
 import { z } from "zod";
 
 export const departmentSchema = z.object({
-  faculty_id: z
-    .string()
-    .min(1, "Faculty ID is required")
-    .uuid("Invalid faculty ID format"),
+  faculty_id: z.uuid("Invalid faculty ID format"),
   name: z
     .string()
     .trim()

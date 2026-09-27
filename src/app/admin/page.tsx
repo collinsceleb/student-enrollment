@@ -5,6 +5,7 @@ import {
   filterStudentsForFacultyDashboard,
 } from "@/features/faculty/faculty.service";
 import { getCurrentAdminProfile } from "@/features/auth/auth.service";
+import { DepartmentManagementPanel } from "@/features/department/department-management-panel";
 import { getDepartmentsByFaculty } from "@/features/department/department.service";
 import { FacultyManagementPanel } from "@/features/faculty/faculty-management-panel";
 import { getStudentsByFacultyPage } from "@/features/students/student.service";
@@ -21,6 +22,8 @@ export default async function AdminDashboardPage({
     page?: string;
     facultyStatus?: string;
     facultyError?: string;
+    departmentStatus?: string;
+    departmentError?: string;
   }>;
 }>) {
   const supabaseClient = await createClient();
@@ -395,42 +398,12 @@ export default async function AdminDashboardPage({
             error={resolvedSearchParams.facultyError}
           />
 
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="mb-4 text-xl font-semibold text-slate-900">
-              Departments
-            </h2>
-            <div className="space-y-3">
-              {departments.length === 0 ? (
-                <p className="text-sm text-slate-500">
-                  No departments available.
-                </p>
-              ) : (
-                departments.map((department) => {
-                  const facultyName =
-                    faculties.find(
-                      (faculty) => faculty.id === department.faculty_id
-                    )?.name ?? "Unknown faculty";
-
-                  return (
-                    <div
-                      key={department.id}
-                      className="flex items-center justify-between rounded-xl border border-slate-200 p-3"
-                    >
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {department.name}
-                        </p>
-                        <p className="text-sm text-slate-500">{facultyName}</p>
-                      </div>
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
-                        {department.code}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
+          <DepartmentManagementPanel
+            departments={departments}
+            faculties={faculties}
+            status={resolvedSearchParams.departmentStatus}
+            error={resolvedSearchParams.departmentError}
+          />
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2">
