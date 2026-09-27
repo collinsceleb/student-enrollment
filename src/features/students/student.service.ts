@@ -259,7 +259,7 @@ export async function getStudentById(
       `
       *,
       faculty:faculties (*),
-      department:departments (*)
+      department:departments!students_department_id_fkey (*)
     `
     )
     .eq("id", id)
@@ -290,7 +290,7 @@ export async function getStudentsByFaculty(
       `
       *,
       faculty:faculties (*),
-      department:departments (*)
+      department:departments!students_department_id_fkey (*)
     `
     )
     .eq("faculty_id", queryOptions.facultyId)
@@ -340,7 +340,7 @@ export async function getStudentsByFacultyPage(
       `
       *,
       faculty:faculties (*),
-      department:departments (*)
+      department:departments!students_department_id_fkey (*)
     `,
       { count: "exact" }
     )
