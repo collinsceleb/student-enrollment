@@ -100,23 +100,11 @@ export default async function AdminDashboardPage({
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-1">
             <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
               <p className="text-sm text-slate-500">Total Students</p>
               <p className="mt-3 text-3xl font-bold text-slate-900">
                 {summary.totalStudents}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <p className="text-sm text-slate-500">JAMBITE</p>
-              <p className="mt-3 text-3xl font-bold text-slate-900">
-                {summary.jambiteCount}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <p className="text-sm text-slate-500">Direct Entry</p>
-              <p className="mt-3 text-3xl font-bold text-slate-900">
-                {summary.directEntryCount}
               </p>
             </div>
           </div>
