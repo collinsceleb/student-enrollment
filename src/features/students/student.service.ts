@@ -32,6 +32,44 @@ export interface StudentFilterParams {
   departmentId?: string;
   admissionType?: AdmissionType;
   searchQuery?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface StudentListQueryOptions {
+  facultyId: string;
+  departmentId?: string;
+  admissionType?: AdmissionType;
+  searchQuery: string;
+  page: number;
+  pageSize: number;
+  offset: number;
+  limit: number;
+}
+
+export function buildStudentListQueryOptions(
+  params: StudentFilterParams
+): StudentListQueryOptions {
+  const normalizedPage = Math.max(
+    1,
+    Number.parseInt(String(params.page ?? 1), 10) || 1
+  );
+  const normalizedPageSize = Math.min(
+    100,
+    Math.max(1, Number.parseInt(String(params.pageSize ?? 20), 10) || 20)
+  );
+  const normalizedSearchQuery = params.searchQuery?.trim() ?? "";
+
+  return {
+    facultyId: params.facultyId,
+    departmentId: params.departmentId,
+    admissionType: params.admissionType,
+    searchQuery: normalizedSearchQuery,
+    page: normalizedPage,
+    pageSize: normalizedPageSize,
+    offset: (normalizedPage - 1) * normalizedPageSize,
+    limit: normalizedPageSize,
+  };
 }
 
 /**
@@ -244,6 +282,8 @@ export async function getStudentsByFaculty(
   supabase: SupabaseClient<Database>,
   params: StudentFilterParams
 ): Promise<StudentWithRelations[]> {
+  const queryOptions = buildStudentListQueryOptions(params);
+
   let query = supabase
     .from("students")
     .select(
@@ -253,20 +293,21 @@ export async function getStudentsByFaculty(
       department:departments (*)
     `
     )
-    .eq("faculty_id", params.facultyId)
+    .eq("faculty_id", queryOptions.facultyId)
     .order("last_name", { ascending: true })
-    .order("first_name", { ascending: true });
+    .order("first_name", { ascending: true })
+    .range(queryOptions.offset, queryOptions.offset + queryOptions.limit - 1);
 
-  if (params.departmentId) {
-    query = query.eq("department_id", params.departmentId);
+  if (queryOptions.departmentId) {
+    query = query.eq("department_id", queryOptions.departmentId);
   }
 
-  if (params.admissionType) {
-    query = query.eq("admission_type", params.admissionType);
+  if (queryOptions.admissionType) {
+    query = query.eq("admission_type", queryOptions.admissionType);
   }
 
-  if (params.searchQuery && params.searchQuery.trim().length > 0) {
-    const term = `%${params.searchQuery.trim()}%`;
+  if (queryOptions.searchQuery.length > 0) {
+    const term = `%${queryOptions.searchQuery}%`;
     query = query.or(
       `first_name.ilike.${term},last_name.ilike.${term},other_name.ilike.${term},registration_number.ilike.${term}`
     );
@@ -279,4 +320,65 @@ export async function getStudentsByFaculty(
   }
 
   return (data ?? []) as unknown as StudentWithRelations[];
+}
+
+export async function getStudentsByFacultyPage(
+  supabase: SupabaseClient<Database>,
+  params: StudentFilterParams
+): Promise<{
+  items: StudentWithRelations[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}> {
+  const queryOptions = buildStudentListQueryOptions(params);
+
+  let query = supabase
+    .from("students")
+    .select(
+      `
+      *,
+      faculty:faculties (*),
+      department:departments (*)
+    `,
+      { count: "exact" }
+    )
+    .eq("faculty_id", queryOptions.facultyId)
+    .order("last_name", { ascending: true })
+    .order("first_name", { ascending: true })
+    .range(queryOptions.offset, queryOptions.offset + queryOptions.limit - 1);
+
+  if (queryOptions.departmentId) {
+    query = query.eq("department_id", queryOptions.departmentId);
+  }
+
+  if (queryOptions.admissionType) {
+    query = query.eq("admission_type", queryOptions.admissionType);
+  }
+
+  if (queryOptions.searchQuery.length > 0) {
+    const term = `%${queryOptions.searchQuery}%`;
+    query = query.or(
+      `first_name.ilike.${term},last_name.ilike.${term},other_name.ilike.${term},registration_number.ilike.${term}`
+    );
+  }
+
+  const { data, count, error } = await query;
+
+  if (error) {
+    throw new Error(`Failed to fetch faculty students: ${error.message}`);
+  }
+
+  const totalCount = count ?? data?.length ?? 0;
+  const pageSize = queryOptions.pageSize;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  return {
+    items: (data ?? []) as unknown as StudentWithRelations[],
+    totalCount,
+    page: queryOptions.page,
+    pageSize,
+    totalPages,
+  };
 }

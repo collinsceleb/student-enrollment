@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { studentSchema } from "@/lib/validation/student.schema";
+import { buildStudentListQueryOptions } from "@/features/students/student.service";
 import { formatStudentFullName } from "@/types/student";
 
 describe("Student Validation Schema & Formatting", () => {
@@ -135,5 +136,26 @@ describe("Student Validation Schema & Formatting", () => {
       first_name: "Chukwudi",
     });
     expect(fullNameWithoutOther).toBe("OKONKWO, Chukwudi");
+  });
+
+  it("should normalize search and pagination defaults for server-side filtering", () => {
+    const options = buildStudentListQueryOptions({
+      facultyId: validFacultyId,
+      page: 3,
+      pageSize: 25,
+      searchQuery: "  olu  ",
+      departmentId: validDepartmentId,
+      admissionType: "JAMBITE",
+    });
+
+    expect(options).toMatchObject({
+      page: 3,
+      pageSize: 25,
+      searchQuery: "olu",
+      departmentId: validDepartmentId,
+      admissionType: "JAMBITE",
+    });
+    expect(options.offset).toBe(50);
+    expect(options.limit).toBe(25);
   });
 });

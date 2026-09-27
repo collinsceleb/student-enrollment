@@ -6,7 +6,7 @@ import {
 } from "@/features/faculty/faculty.service";
 import { getCurrentAdminProfile } from "@/features/auth/auth.service";
 import { getDepartmentsByFaculty } from "@/features/department/department.service";
-import { getStudentsByFaculty } from "@/features/students/student.service";
+import { getStudentsByFacultyPage } from "@/features/students/student.service";
 import { createClient } from "@/lib/supabase/server";
 import { formatStudentFullName, type AdmissionType } from "@/types/student";
 
@@ -17,6 +17,7 @@ export default async function AdminDashboardPage({
     search?: string;
     department?: string;
     admissionType?: string;
+    page?: string;
   }>;
 }>) {
   const supabaseClient = await createClient();
@@ -34,6 +35,10 @@ export default async function AdminDashboardPage({
 
   const resolvedSearchParams =
     searchParams !== undefined ? await searchParams : {};
+  const activePage = Math.max(
+    1,
+    Number.parseInt(resolvedSearchParams.page ?? "1", 10) || 1
+  );
 
   if (profile.data.role === "FACULTY_ADMIN") {
     const facultyId = profile.data.faculty_id;
@@ -46,16 +51,27 @@ export default async function AdminDashboardPage({
       supabaseClient,
       facultyId
     );
-    const allStudents = await getStudentsByFaculty(supabaseClient, {
-      facultyId,
-    });
 
-    const filteredStudents = filterStudentsForFacultyDashboard(allStudents, {
-      search: resolvedSearchParams.search,
+    const pageSize = 20;
+    const studentPage = await getStudentsByFacultyPage(supabaseClient, {
+      facultyId,
       departmentId: resolvedSearchParams.department,
       admissionType: resolvedSearchParams.admissionType as
         AdmissionType | undefined,
+      searchQuery: resolvedSearchParams.search,
+      page: activePage,
+      pageSize,
     });
+
+    const filteredStudents = filterStudentsForFacultyDashboard(
+      studentPage.items,
+      {
+        search: resolvedSearchParams.search,
+        departmentId: resolvedSearchParams.department,
+        admissionType: resolvedSearchParams.admissionType as
+          AdmissionType | undefined,
+      }
+    );
 
     const summary = buildFacultyDashboardSummary(filteredStudents);
 
@@ -152,6 +168,8 @@ export default async function AdminDashboardPage({
                   className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                 />
 
+                <input type="hidden" name="page" value="1" />
+
                 <select
                   name="department"
                   defaultValue={resolvedSearchParams.department ?? ""}
@@ -225,6 +243,32 @@ export default async function AdminDashboardPage({
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <div className="text-sm text-slate-600">
+                Page {studentPage.page} of {studentPage.totalPages}
+              </div>
+
+              <div className="flex gap-2">
+                {studentPage.page > 1 && (
+                  <a
+                    href={`?page=${studentPage.page - 1}${resolvedSearchParams.search ? `&search=${encodeURIComponent(resolvedSearchParams.search)}` : ""}${resolvedSearchParams.department ? `&department=${encodeURIComponent(resolvedSearchParams.department)}` : ""}${resolvedSearchParams.admissionType ? `&admissionType=${encodeURIComponent(resolvedSearchParams.admissionType)}` : ""}`}
+                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
+                  >
+                    Previous
+                  </a>
+                )}
+
+                {studentPage.page < studentPage.totalPages && (
+                  <a
+                    href={`?page=${studentPage.page + 1}${resolvedSearchParams.search ? `&search=${encodeURIComponent(resolvedSearchParams.search)}` : ""}${resolvedSearchParams.department ? `&department=${encodeURIComponent(resolvedSearchParams.department)}` : ""}${resolvedSearchParams.admissionType ? `&admissionType=${encodeURIComponent(resolvedSearchParams.admissionType)}` : ""}`}
+                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
+                  >
+                    Next
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>
