@@ -68,6 +68,63 @@ export interface Database {
           },
         ];
       };
+      students: {
+        Row: {
+          id: string;
+          first_name: string;
+          last_name: string;
+          other_name: string | null;
+          phone_number: string;
+          registration_number: string;
+          faculty_id: string;
+          department_id: string;
+          admission_type: Database["public"]["Enums"]["admission_type"];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          first_name: string;
+          last_name: string;
+          other_name?: string | null;
+          phone_number: string;
+          registration_number: string;
+          faculty_id: string;
+          department_id: string;
+          admission_type: Database["public"]["Enums"]["admission_type"];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          first_name?: string;
+          last_name?: string;
+          other_name?: string | null;
+          phone_number?: string;
+          registration_number?: string;
+          faculty_id?: string;
+          department_id?: string;
+          admission_type?: Database["public"]["Enums"]["admission_type"];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "students_faculty_id_fkey";
+            columns: ["faculty_id"];
+            isOneToOne: false;
+            referencedRelation: "faculties";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "students_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -76,7 +133,7 @@ export interface Database {
       [_ in never]: never;
     };
     Enums: {
-      [_ in never]: never;
+      admission_type: "JAMBITE" | "DIRECT_ENTRY";
     };
     CompositeTypes: {
       [_ in never]: never;
