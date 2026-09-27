@@ -6,6 +6,7 @@ import {
 } from "@/features/faculty/faculty.service";
 import { getCurrentAdminProfile } from "@/features/auth/auth.service";
 import { getDepartmentsByFaculty } from "@/features/department/department.service";
+import { FacultyManagementPanel } from "@/features/faculty/faculty-management-panel";
 import { getStudentsByFacultyPage } from "@/features/students/student.service";
 import { createClient } from "@/lib/supabase/server";
 import { formatStudentFullName, type AdmissionType } from "@/types/student";
@@ -18,6 +19,8 @@ export default async function AdminDashboardPage({
     department?: string;
     admissionType?: string;
     page?: string;
+    facultyStatus?: string;
+    facultyError?: string;
   }>;
 }>) {
   const supabaseClient = await createClient();
@@ -386,39 +389,11 @@ export default async function AdminDashboardPage({
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2">
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="mb-4 text-xl font-semibold text-slate-900">
-              Faculties
-            </h2>
-            <div className="space-y-3">
-              {faculties.length === 0 ? (
-                <p className="text-sm text-slate-500">
-                  No faculties available.
-                </p>
-              ) : (
-                facultyBreakdown.map((faculty) => (
-                  <div
-                    key={faculty.id}
-                    className="rounded-xl border border-slate-200 p-3"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-slate-900">
-                          {faculty.name}
-                        </p>
-                        <p className="text-sm text-slate-500">{faculty.code}</p>
-                      </div>
-                      <div className="text-right text-sm text-slate-600">
-                        <div>{faculty.departmentCount} departments</div>
-                        <div>{faculty.adminCount} admins</div>
-                        <div>{faculty.studentCount} students</div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+          <FacultyManagementPanel
+            faculties={facultyBreakdown}
+            status={resolvedSearchParams.facultyStatus}
+            error={resolvedSearchParams.facultyError}
+          />
 
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <h2 className="mb-4 text-xl font-semibold text-slate-900">
