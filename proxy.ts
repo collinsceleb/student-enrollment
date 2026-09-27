@@ -39,6 +39,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // The proxy only enforces an authenticated session. Role checks happen in the
+  // actual admin page, where we can resolve the profile and redirect faculty admins
+  // to the faculty dashboard or the super admin to the admin console.
   if (!hasSupabaseAuthSession(request.cookies.getAll())) {
     return NextResponse.redirect(new URL("/login", request.url));
   }

@@ -13,7 +13,15 @@ export default async function AdminDashboardPage() {
 
   const profile = await getCurrentAdminProfile(supabaseClient);
 
-  if (!profile.data || !profile.data.role) {
+  if (!profile.data?.role) {
+    redirect("/login");
+  }
+
+  if (profile.data.role === "FACULTY_ADMIN") {
+    redirect("/faculty");
+  }
+
+  if (profile.data.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
 
