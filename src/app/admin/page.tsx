@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import {
@@ -45,6 +46,12 @@ export default async function AdminDashboardPage({
   const profile = await getCurrentAdminProfile(supabaseClient);
 
   if (!profile.data?.role) {
+    redirect("/login");
+  }
+  if (!profile.data.has_changed_password) {
+    redirect("/change-password");
+  }
+  if (!profile.data.session_is_current) {
     redirect("/login");
   }
 
@@ -104,14 +111,22 @@ export default async function AdminDashboardPage({
                 </h1>
               </div>
 
-              <form action="/auth/logout" method="POST">
-                <button
-                  type="submit"
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/change-password"
                   className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
                 >
-                  Logout
-                </button>
-              </form>
+                  Change password
+                </Link>
+                <form action="/auth/logout" method="POST">
+                  <button
+                    type="submit"
+                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
+                  >
+                    Logout
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
 
@@ -347,14 +362,22 @@ export default async function AdminDashboardPage({
               </h1>
             </div>
 
-            <form action="/auth/logout" method="POST">
-              <button
-                type="submit"
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            <div className="flex items-center gap-2">
+              <Link
+                href="/change-password"
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
               >
-                Logout
-              </button>
-            </form>
+                Change password
+              </Link>
+              <form action="/auth/logout" method="POST">
+                <button
+                  type="submit"
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Logout
+                </button>
+              </form>
+            </div>
           </div>
         </div>
 

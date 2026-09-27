@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 export interface SuperAdminBootstrapConfig {
   email: string;
   password: string;
@@ -78,6 +80,11 @@ export async function ensureFirstSuperAdmin() {
     user_id: createdUserData.user.id,
     role: "SUPER_ADMIN",
     faculty_id: null,
+    has_changed_password: false,
+    temporary_password_issued_at: new Date(
+      (Math.floor(Date.now() / 1000) + 1) * 1000
+    ).toISOString(),
+    temporary_password_reset_id: randomUUID(),
   });
 
   if (profileError) {

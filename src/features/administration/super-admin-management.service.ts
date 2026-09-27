@@ -3,6 +3,7 @@ import type {
   SuperAdminCreateInput,
   SuperAdminUpdateInput,
 } from "@/lib/validation/super-admin.schema";
+import { getTemporaryPasswordIssuedAt } from "@/features/auth/temporary-password";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -10,6 +11,7 @@ export type SuperAdministrator = {
   id: string;
   user_id: string;
   email: string | null;
+  has_changed_password: boolean;
 };
 
 export type SuperAdminMutationResult =
@@ -47,7 +49,7 @@ export async function getSuperAdministrators(
 ): Promise<SuperAdministrator[]> {
   const { data: profiles, error } = await supabase
     .from("admin_profiles")
-    .select("id, user_id")
+    .select("id, user_id, has_changed_password")
     .eq("role", "SUPER_ADMIN")
     .order("created_at", { ascending: true });
 
@@ -74,11 +76,13 @@ export async function getSuperAdministrators(
 
 export async function createSuperAdministrator(
   supabase: AdminClient,
-  input: SuperAdminCreateInput
+  input: SuperAdminCreateInput,
+  temporaryPassword: string,
+  temporaryPasswordResetId: string
 ): Promise<SuperAdminMutationResult> {
   const { data, error } = await supabase.auth.admin.createUser({
     email: input.email,
-    password: input.password,
+    password: temporaryPassword,
     email_confirm: true,
   });
 
@@ -93,6 +97,9 @@ export async function createSuperAdministrator(
     user_id: data.user.id,
     role: "SUPER_ADMIN",
     faculty_id: null,
+    has_changed_password: false,
+    temporary_password_issued_at: getTemporaryPasswordIssuedAt(),
+    temporary_password_reset_id: temporaryPasswordResetId,
   });
 
   if (profileError) {
@@ -108,20 +115,10 @@ export async function updateSuperAdministrator(
   userId: string,
   input: SuperAdminUpdateInput
 ): Promise<SuperAdminMutationResult> {
-  const attributes: {
-    email: string;
-    email_confirm: boolean;
-    password?: string;
-  } = {
+  const { data, error } = await supabase.auth.admin.updateUserById(userId, {
     email: input.email,
     email_confirm: true,
-  };
-  if (input.password) attributes.password = input.password;
-
-  const { data, error } = await supabase.auth.admin.updateUserById(
-    userId,
-    attributes
-  );
+  });
 
   if (error) {
     return {

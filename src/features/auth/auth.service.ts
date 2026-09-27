@@ -53,10 +53,45 @@ export function getAdminAccessContext(
   };
 }
 
+export function isSessionCurrentAfterTemporaryPassword(
+  temporaryPasswordIssuedAt: string | null,
+  authTime: number
+): boolean {
+  if (!temporaryPasswordIssuedAt) return true;
+
+  const issuanceSecond = Math.floor(
+    Date.parse(temporaryPasswordIssuedAt) / 1000
+  );
+  return Number.isFinite(authTime) && authTime >= issuanceSecond;
+}
+
+export function getAuthTimeFromClaims(data: unknown): number {
+  if (typeof data !== "object" || data === null || !("claims" in data)) {
+    return 0;
+  }
+
+  const claims = data.claims;
+  if (
+    typeof claims !== "object" ||
+    claims === null ||
+    !("auth_time" in claims)
+  ) {
+    return 0;
+  }
+
+  return Number(claims.auth_time ?? 0);
+}
+
 export async function getCurrentAdminProfile(
   supabase: SupabaseClient<Database>
 ): Promise<{
-  data: { role: AdminRole; faculty_id: string | null } | null;
+  data: {
+    role: AdminRole;
+    faculty_id: string | null;
+    has_changed_password: boolean;
+    session_is_current: boolean;
+    temporary_password_issued_at: string | null;
+  } | null;
   error: Error | null;
 }> {
   const {
@@ -73,7 +108,9 @@ export async function getCurrentAdminProfile(
 
   const { data, error } = await supabase
     .from("admin_profiles")
-    .select("role, faculty_id")
+    .select(
+      "role, faculty_id, has_changed_password, temporary_password_issued_at"
+    )
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -85,10 +122,18 @@ export async function getCurrentAdminProfile(
     return { data: null, error: null };
   }
 
+  const { data: claims } = await supabase.auth.getClaims();
+  const authTime = getAuthTimeFromClaims(claims);
   return {
     data: {
       role: normalizeAdminRole(data.role) ?? "FACULTY_ADMIN",
       faculty_id: data.faculty_id,
+      has_changed_password: data.has_changed_password,
+      session_is_current: isSessionCurrentAfterTemporaryPassword(
+        data.temporary_password_issued_at,
+        authTime
+      ),
+      temporary_password_issued_at: data.temporary_password_issued_at,
     },
     error: null,
   };

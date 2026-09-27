@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
 
 import { getSuperAdminRemovalBlocker } from "@/features/administration/super-admin-management.service";
 import {
@@ -10,7 +12,6 @@ describe("Super administrator management", () => {
   it("normalizes email when creating an account", () => {
     const result = superAdminCreateSchema.safeParse({
       email: "  ROOT.ADMIN@EXAMPLE.COM ",
-      password: "StrongPassword123",
     });
 
     expect(result.success).toBe(true);
@@ -19,14 +20,12 @@ describe("Super administrator management", () => {
     }
   });
 
-  it("permits an omitted replacement password when updating email", () => {
+  it("validates email-only account updates", () => {
     const result = superAdminUpdateSchema.safeParse({
       email: "root.admin@example.com",
-      password: "",
     });
 
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.password).toBeUndefined();
   });
 
   it("blocks removal of the current account or the final super admin", () => {

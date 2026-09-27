@@ -22,6 +22,12 @@ async function requireSuperAdmin() {
   if (profile.data?.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
+  if (!profile.data.has_changed_password) {
+    redirect("/change-password");
+  }
+  if (!profile.data.session_is_current) {
+    redirect("/login");
+  }
 
   return supabase;
 }

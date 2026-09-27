@@ -1,7 +1,9 @@
+import { updateFacultyAdminAssignmentAction } from "@/features/administration/faculty-admin.actions";
 import {
   createFacultyAdminAction,
-  updateFacultyAdminAssignmentAction,
-} from "@/features/administration/faculty-admin.actions";
+  issueTemporaryPasswordAction,
+} from "@/features/administration/temporary-password.actions";
+import { TemporaryPasswordForm } from "@/features/administration/temporary-password-form";
 import { FacultyAdminDeleteForm } from "@/features/administration/faculty-admin-delete-form";
 import type { FacultyAdministrator } from "@/features/administration/faculty-admin-management.service";
 
@@ -18,9 +20,6 @@ const statusMessages: Record<string, string> = {
 };
 
 const errorMessages: Record<string, string> = {
-  invalid: "Enter a valid email, password, and faculty assignment.",
-  "duplicate-email": "An account with that email already exists.",
-  "invalid-faculty": "Select an existing faculty.",
   "not-found": "That faculty administrator could not be found.",
   failed: "The administrator change could not be completed. Please try again.",
 };
@@ -48,12 +47,9 @@ export function FacultyAdminManagementPanel({
       </div>
 
       {status && statusMessages[status] && (
-        <p
-          role="status"
-          className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800"
-        >
+        <output className="mb-4 block rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
           {statusMessages[status]}
-        </p>
+        </output>
       )}
       {error && errorMessages[error] && (
         <p
@@ -69,9 +65,10 @@ export function FacultyAdminManagementPanel({
           Create a faculty before adding faculty administrators.
         </p>
       ) : (
-        <form
+        <TemporaryPasswordForm
           action={createFacultyAdminAction}
-          className="mb-5 grid gap-3 rounded-lg border border-slate-200 p-4 md:grid-cols-2"
+          submitLabel="Create administrator"
+          className="mb-5 rounded-lg border border-slate-200 p-4"
         >
           <label className="block space-y-1.5">
             <span className="text-sm font-medium text-slate-700">Email</span>
@@ -79,18 +76,6 @@ export function FacultyAdminManagementPanel({
               name="email"
               type="email"
               autoComplete="email"
-              required
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-            />
-          </label>
-          <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-slate-700">Password</span>
-            <input
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              minLength={8}
-              maxLength={128}
               required
               className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
             />
@@ -113,13 +98,7 @@ export function FacultyAdminManagementPanel({
               ))}
             </select>
           </label>
-          <button
-            type="submit"
-            className="self-end rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-          >
-            Create administrator
-          </button>
-        </form>
+        </TemporaryPasswordForm>
       )}
 
       <div className="space-y-3">
@@ -139,6 +118,11 @@ export function FacultyAdminManagementPanel({
                 </p>
                 <p className="text-xs text-slate-500">
                   Account ID: {administrator.user_id.slice(0, 8)}
+                </p>
+                <p className="mt-1 text-xs font-medium text-slate-600">
+                  {administrator.has_changed_password
+                    ? "Password changed"
+                    : "Temporary password pending"}
                 </p>
               </div>
               <form
@@ -177,7 +161,18 @@ export function FacultyAdminManagementPanel({
                   Update assignment
                 </button>
               </form>
-              <div className="mt-3 flex justify-end">
+              <div className="mt-3 flex items-end justify-between gap-3">
+                <TemporaryPasswordForm
+                  action={issueTemporaryPasswordAction}
+                  submitLabel="Issue temporary password"
+                  className="flex-1"
+                >
+                  <input
+                    type="hidden"
+                    name="user_id"
+                    value={administrator.user_id}
+                  />
+                </TemporaryPasswordForm>
                 <FacultyAdminDeleteForm userId={administrator.user_id} />
               </div>
             </div>

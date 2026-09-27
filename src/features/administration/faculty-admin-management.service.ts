@@ -3,6 +3,7 @@ import type {
   FacultyAdminAssignmentInput,
   FacultyAdminCreateInput,
 } from "@/lib/validation/faculty-admin.schema";
+import { getTemporaryPasswordIssuedAt } from "@/features/auth/temporary-password";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -11,6 +12,7 @@ export type FacultyAdministrator = {
   user_id: string;
   faculty_id: string | null;
   email: string | null;
+  has_changed_password: boolean;
 };
 
 export type FacultyAdminMutationResult =
@@ -24,7 +26,7 @@ export async function getFacultyAdministrators(
 ): Promise<FacultyAdministrator[]> {
   const { data: profiles, error } = await supabase
     .from("admin_profiles")
-    .select("id, user_id, faculty_id")
+    .select("id, user_id, faculty_id, has_changed_password")
     .eq("role", "FACULTY_ADMIN")
     .order("faculty_id", { ascending: true });
 
@@ -51,11 +53,13 @@ export async function getFacultyAdministrators(
 
 export async function createFacultyAdministrator(
   supabase: AdminClient,
-  input: FacultyAdminCreateInput
+  input: FacultyAdminCreateInput,
+  temporaryPassword: string,
+  temporaryPasswordResetId: string
 ): Promise<FacultyAdminMutationResult> {
   const { data, error } = await supabase.auth.admin.createUser({
     email: input.email,
-    password: input.password,
+    password: temporaryPassword,
     email_confirm: true,
   });
 
@@ -74,6 +78,9 @@ export async function createFacultyAdministrator(
     user_id: data.user.id,
     role: "FACULTY_ADMIN",
     faculty_id: input.faculty_id,
+    has_changed_password: false,
+    temporary_password_issued_at: getTemporaryPasswordIssuedAt(),
+    temporary_password_reset_id: temporaryPasswordResetId,
   });
 
   if (profileError) {

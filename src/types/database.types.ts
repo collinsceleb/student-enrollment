@@ -131,6 +131,9 @@ export interface Database {
           user_id: string;
           role: Database["public"]["Enums"]["admin_role"];
           faculty_id: string | null;
+          has_changed_password: boolean;
+          temporary_password_issued_at: string | null;
+          temporary_password_reset_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -139,6 +142,9 @@ export interface Database {
           user_id: string;
           role: Database["public"]["Enums"]["admin_role"];
           faculty_id?: string | null;
+          has_changed_password?: boolean;
+          temporary_password_issued_at?: string | null;
+          temporary_password_reset_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -147,6 +153,9 @@ export interface Database {
           user_id?: string;
           role?: Database["public"]["Enums"]["admin_role"];
           faculty_id?: string | null;
+          has_changed_password?: boolean;
+          temporary_password_issued_at?: string | null;
+          temporary_password_reset_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

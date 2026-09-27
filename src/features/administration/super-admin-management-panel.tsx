@@ -1,7 +1,9 @@
+import { updateSuperAdminAction } from "@/features/administration/super-admin.actions";
 import {
   createSuperAdminAction,
-  updateSuperAdminAction,
-} from "@/features/administration/super-admin.actions";
+  issueTemporaryPasswordAction,
+} from "@/features/administration/temporary-password.actions";
+import { TemporaryPasswordForm } from "@/features/administration/temporary-password-form";
 import { SuperAdminDeleteForm } from "@/features/administration/super-admin-delete-form";
 import type { SuperAdministrator } from "@/features/administration/super-admin-management.service";
 
@@ -16,6 +18,7 @@ const errorMessages: Record<string, string> = {
   "duplicate-email": "An account with that email already exists.",
   "last-super-admin": "The final super administrator cannot be removed.",
   "self-removal": "You cannot remove your own account.",
+  "self-reset": "Ask another super admin to issue your temporary password.",
   "not-found": "That super administrator could not be found.",
   failed:
     "The super administrator change could not be completed. Please try again.",
@@ -44,12 +47,9 @@ export function SuperAdminManagementPanel({
       </div>
 
       {status && statusMessages[status] && (
-        <p
-          role="status"
-          className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800"
-        >
+        <output className="mb-4 block rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
           {statusMessages[status]}
-        </p>
+        </output>
       )}
       {error && errorMessages[error] && (
         <p
@@ -60,9 +60,10 @@ export function SuperAdminManagementPanel({
         </p>
       )}
 
-      <form
+      <TemporaryPasswordForm
         action={createSuperAdminAction}
-        className="mb-5 grid gap-3 rounded-lg border border-slate-200 p-4 md:grid-cols-2"
+        submitLabel="Create super admin"
+        className="mb-5 rounded-lg border border-slate-200 p-4"
       >
         <label className="block space-y-1.5">
           <span className="text-sm font-medium text-slate-700">Email</span>
@@ -74,25 +75,7 @@ export function SuperAdminManagementPanel({
             className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
         </label>
-        <label className="block space-y-1.5">
-          <span className="text-sm font-medium text-slate-700">Password</span>
-          <input
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            minLength={8}
-            maxLength={128}
-            required
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-          />
-        </label>
-        <button
-          type="submit"
-          className="self-end rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-        >
-          Create super admin
-        </button>
-      </form>
+      </TemporaryPasswordForm>
 
       <div className="space-y-3">
         {administrators.length === 0 ? (
@@ -105,9 +88,10 @@ export function SuperAdminManagementPanel({
             const isLastAdministrator = administrators.length === 1;
             const disabledReason = isCurrentUser
               ? "Current account"
-              : isLastAdministrator
-                ? "Final super admin"
-                : undefined;
+              : undefined;
+            const removalDisabledReason =
+              disabledReason ??
+              (isLastAdministrator ? "Final super admin" : undefined);
 
             return (
               <div
@@ -120,9 +104,14 @@ export function SuperAdminManagementPanel({
                 <p className="mb-3 text-xs text-slate-500">
                   Account ID: {administrator.user_id.slice(0, 8)}
                 </p>
+                <p className="mb-3 text-xs font-medium text-slate-600">
+                  {administrator.has_changed_password
+                    ? "Password changed"
+                    : "Temporary password pending"}
+                </p>
                 <form
                   action={updateSuperAdminAction}
-                  className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end"
+                  className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end"
                 >
                   <input
                     type="hidden"
@@ -142,18 +131,6 @@ export function SuperAdminManagementPanel({
                       className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                     />
                   </label>
-                  <label className="block space-y-1.5">
-                    <span className="text-xs font-medium text-slate-600">
-                      New password (optional)
-                    </span>
-                    <input
-                      name="password"
-                      type="password"
-                      autoComplete="new-password"
-                      maxLength={128}
-                      className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-                    />
-                  </label>
                   <button
                     type="submit"
                     className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
@@ -161,10 +138,24 @@ export function SuperAdminManagementPanel({
                     Save changes
                   </button>
                 </form>
-                <div className="mt-3 flex justify-end">
+                <div className="mt-3 flex items-end justify-between gap-3">
+                  <TemporaryPasswordForm
+                    action={issueTemporaryPasswordAction}
+                    submitLabel="Issue temporary password"
+                    disabledReason={
+                      isCurrentUser ? "Current account" : undefined
+                    }
+                    className="flex-1"
+                  >
+                    <input
+                      type="hidden"
+                      name="user_id"
+                      value={administrator.user_id}
+                    />
+                  </TemporaryPasswordForm>
                   <SuperAdminDeleteForm
                     userId={administrator.user_id}
-                    disabledReason={disabledReason}
+                    disabledReason={removalDisabledReason}
                   />
                 </div>
               </div>
