@@ -2,6 +2,25 @@ import { NextResponse, NextRequest } from "next/server";
 
 const ADMIN_PATHS = ["/admin", "/admin/:path*"];
 
+export function hasSupabaseAuthSession(
+  cookies: Array<{ name: string; value?: string | null }>
+) {
+  return cookies.some(({ name, value }) => {
+    const normalizedName = name.toLowerCase();
+    const hasSessionValue = Boolean(value);
+
+    return (
+      hasSessionValue &&
+      !normalizedName.includes("code-verifier") &&
+      (normalizedName === "sb-access-token" ||
+        normalizedName === "sb-refresh-token" ||
+        normalizedName.endsWith("-auth-token") ||
+        normalizedName.endsWith("-refresh-token") ||
+        normalizedName.endsWith("-auth-token-code-verifier"))
+    );
+  });
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -11,18 +30,16 @@ export function proxy(request: NextRequest) {
 
   const isAdminRoute = ADMIN_PATHS.some(
     (pattern) =>
-      pattern === "/admin" && pathname === "/admin" ||
-      pattern === "/admin/:path*" && (pathname === "/admin" || pathname.startsWith("/admin/"))
+      (pattern === "/admin" && pathname === "/admin") ||
+      (pattern === "/admin/:path*" &&
+        (pathname === "/admin" || pathname.startsWith("/admin/")))
   );
 
   if (!isAdminRoute) {
     return NextResponse.next();
   }
 
-  const accessToken = request.cookies.get("sb-access-token")?.value;
-  const refreshToken = request.cookies.get("sb-refresh-token")?.value;
-
-  if (!accessToken && !refreshToken) {
+  if (!hasSupabaseAuthSession(request.cookies.getAll())) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

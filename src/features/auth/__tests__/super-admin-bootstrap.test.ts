@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getSuperAdminBootstrapConfig } from "@/features/auth/super-admin-bootstrap";
+import { hasSupabaseAuthSession } from "@/../proxy";
 
 describe("Super admin bootstrap config", () => {
   it("returns null when local super admin values are missing", () => {
@@ -21,5 +22,23 @@ describe("Super admin bootstrap config", () => {
       email: "admin@example.com",
       password: "StrongPassword123",
     });
+  });
+
+  it("detects a real Supabase auth-token cookie without mistaking the verifier cookie", () => {
+    expect(
+      hasSupabaseAuthSession([
+        { name: "sb-example-auth-token", value: "session-token" },
+      ])
+    ).toBe(true);
+
+    expect(
+      hasSupabaseAuthSession([
+        { name: "sb-example-auth-token-code-verifier", value: "verifier" },
+      ])
+    ).toBe(false);
+
+    expect(
+      hasSupabaseAuthSession([{ name: "custom-cookie", value: "value" }])
+    ).toBe(false);
   });
 });
