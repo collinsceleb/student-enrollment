@@ -7,6 +7,8 @@ import {
 import { getCurrentAdminProfile } from "@/features/auth/auth.service";
 import { FacultyAdminManagementPanel } from "@/features/administration/faculty-admin-management-panel";
 import { getFacultyAdministrators } from "@/features/administration/faculty-admin-management.service";
+import { SuperAdminManagementPanel } from "@/features/administration/super-admin-management-panel";
+import { getSuperAdministrators } from "@/features/administration/super-admin-management.service";
 import { DepartmentManagementPanel } from "@/features/department/department-management-panel";
 import { getDepartmentsByFaculty } from "@/features/department/department.service";
 import { FacultyManagementPanel } from "@/features/faculty/faculty-management-panel";
@@ -29,6 +31,8 @@ export default async function AdminDashboardPage({
     departmentError?: string;
     facultyAdminStatus?: string;
     facultyAdminError?: string;
+    superAdminStatus?: string;
+    superAdminError?: string;
   }>;
 }>) {
   const supabaseClient = await createClient();
@@ -285,7 +289,7 @@ export default async function AdminDashboardPage({
     departmentsResult,
     facultyAdmins,
     studentsResult,
-    superAdminsResult,
+    superAdmins,
   ] = await Promise.all([
     supabaseClient
       .from("faculties")
@@ -304,17 +308,12 @@ export default async function AdminDashboardPage({
       .order("last_name", { ascending: true })
       .order("first_name", { ascending: true })
       .limit(10),
-    supabaseClient
-      .from("admin_profiles")
-      .select("id, user_id, faculty_id, role")
-      .eq("role", "SUPER_ADMIN")
-      .order("user_id", { ascending: true }),
+    getSuperAdministrators(adminClient),
   ]);
 
   const faculties = facultiesResult.data ?? [];
   const departments = departmentsResult.data ?? [];
   const students = studentsResult.data ?? [];
-  const superAdmins = superAdminsResult.data ?? [];
 
   const facultyCount = faculties.length;
   const departmentCount = departments.length;
@@ -415,37 +414,12 @@ export default async function AdminDashboardPage({
             error={resolvedSearchParams.facultyAdminError}
           />
 
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="mb-4 text-xl font-semibold text-slate-900">
-              Super Administrators
-            </h2>
-            <div className="space-y-3">
-              {superAdmins.length === 0 ? (
-                <p className="text-sm text-slate-500">
-                  No super administrators found.
-                </p>
-              ) : (
-                superAdmins.map((admin) => (
-                  <div
-                    key={admin.id}
-                    className="flex items-center justify-between rounded-xl border border-slate-200 p-3"
-                  >
-                    <div>
-                      <p className="font-medium text-slate-900">
-                        Super Admin #{admin.id.slice(0, 8)}
-                      </p>
-                      <p className="text-sm text-slate-500">
-                        User ID: {admin.user_id.slice(0, 8)}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-slate-900 px-2 py-1 text-xs font-medium text-white">
-                      SUPER_ADMIN
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+          <SuperAdminManagementPanel
+            administrators={superAdmins}
+            currentUserId={userSession.user.id}
+            status={resolvedSearchParams.superAdminStatus}
+            error={resolvedSearchParams.superAdminError}
+          />
         </section>
 
         <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
