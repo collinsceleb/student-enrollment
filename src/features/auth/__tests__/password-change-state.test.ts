@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  getAuthTimeFromClaims,
+  getIssuedAtFromClaims,
   isSessionCurrentAfterTemporaryPassword,
 } from "@/features/auth/auth.service";
 
 describe("temporary-password session freshness", () => {
-  it("reads auth_time from the nested Supabase claims object", () => {
-    expect(
-      getAuthTimeFromClaims({ claims: { auth_time: 1_790_539_211 } })
-    ).toBe(1_790_539_211);
+  it("reads iat from the nested Supabase claims object", () => {
+    expect(getIssuedAtFromClaims({ claims: { iat: 1_790_539_211 } })).toBe(
+      1_790_539_211
+    );
   });
 
   it("keeps existing accounts without an issuance timestamp valid", () => {

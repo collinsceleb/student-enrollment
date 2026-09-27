@@ -55,31 +55,27 @@ export function getAdminAccessContext(
 
 export function isSessionCurrentAfterTemporaryPassword(
   temporaryPasswordIssuedAt: string | null,
-  authTime: number
+  tokenIssuedAt: number
 ): boolean {
   if (!temporaryPasswordIssuedAt) return true;
 
   const issuanceSecond = Math.floor(
     Date.parse(temporaryPasswordIssuedAt) / 1000
   );
-  return Number.isFinite(authTime) && authTime >= issuanceSecond;
+  return Number.isFinite(tokenIssuedAt) && tokenIssuedAt >= issuanceSecond;
 }
 
-export function getAuthTimeFromClaims(data: unknown): number {
+export function getIssuedAtFromClaims(data: unknown): number {
   if (typeof data !== "object" || data === null || !("claims" in data)) {
     return 0;
   }
 
   const claims = data.claims;
-  if (
-    typeof claims !== "object" ||
-    claims === null ||
-    !("auth_time" in claims)
-  ) {
+  if (typeof claims !== "object" || claims === null || !("iat" in claims)) {
     return 0;
   }
 
-  return Number(claims.auth_time ?? 0);
+  return Number(claims.iat ?? 0);
 }
 
 export async function getCurrentAdminProfile(
@@ -123,7 +119,7 @@ export async function getCurrentAdminProfile(
   }
 
   const { data: claims } = await supabase.auth.getClaims();
-  const authTime = getAuthTimeFromClaims(claims);
+  const tokenIssuedAt = getIssuedAtFromClaims(claims);
   return {
     data: {
       role: normalizeAdminRole(data.role) ?? "FACULTY_ADMIN",
@@ -131,7 +127,7 @@ export async function getCurrentAdminProfile(
       has_changed_password: data.has_changed_password,
       session_is_current: isSessionCurrentAfterTemporaryPassword(
         data.temporary_password_issued_at,
-        authTime
+        tokenIssuedAt
       ),
       temporary_password_issued_at: data.temporary_password_issued_at,
     },
