@@ -33,6 +33,12 @@ describe("Super admin bootstrap config", () => {
 
     expect(
       hasSupabaseAuthSession([
+        { name: "sb-example-auth-token.0", value: "session-token-chunk" },
+      ])
+    ).toBe(true);
+
+    expect(
+      hasSupabaseAuthSession([
         { name: "sb-example-auth-token-code-verifier", value: "verifier" },
       ])
     ).toBe(false);

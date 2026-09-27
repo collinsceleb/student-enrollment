@@ -8,16 +8,13 @@ export function hasSupabaseAuthSession(
   return cookies.some(({ name, value }) => {
     const normalizedName = name.toLowerCase();
     const hasSessionValue = Boolean(value);
+    const isAuthCookie =
+      normalizedName === "sb-access-token" ||
+      normalizedName === "sb-refresh-token" ||
+      /-auth-token(?:\.\d+)?$/.test(normalizedName) ||
+      /-refresh-token(?:\.\d+)?$/.test(normalizedName);
 
-    return (
-      hasSessionValue &&
-      !normalizedName.includes("code-verifier") &&
-      (normalizedName === "sb-access-token" ||
-        normalizedName === "sb-refresh-token" ||
-        normalizedName.endsWith("-auth-token") ||
-        normalizedName.endsWith("-refresh-token") ||
-        normalizedName.endsWith("-auth-token-code-verifier"))
-    );
+    return hasSessionValue && isAuthCookie;
   });
 }
 
