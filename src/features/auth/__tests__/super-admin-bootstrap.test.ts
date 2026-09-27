@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getSuperAdminBootstrapConfig } from "@/features/auth/super-admin-bootstrap";
-import { hasSupabaseAuthSession } from "@/../proxy";
+import { hasSupabaseAuthSession } from "@/proxy";
 
 describe("Super admin bootstrap config", () => {
   it("returns null when local super admin values are missing", () => {
