@@ -55,4 +55,14 @@ describe("Faculty Validation Schema", () => {
     const parsed = facultySchema.safeParse(empty);
     expect(parsed.success).toBe(false);
   });
+
+  it("should reject unexpected database or privilege fields", () => {
+    const parsed = facultySchema.safeParse({
+      name: "Faculty of Science",
+      code: "SCI",
+      created_at: "2026-10-02T00:00:00.000Z",
+    });
+
+    expect(parsed.success).toBe(false);
+  });
 });

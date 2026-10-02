@@ -28,6 +28,20 @@ describe("Super administrator management", () => {
     expect(result.success).toBe(true);
   });
 
+  it("rejects oversized emails and unexpected fields", () => {
+    expect(
+      superAdminCreateSchema.safeParse({
+        email: `${"a".repeat(322)}@example.com`,
+      }).success
+    ).toBe(false);
+    expect(
+      superAdminUpdateSchema.safeParse({
+        email: "root.admin@example.com",
+        role: "FACULTY_ADMIN",
+      }).success
+    ).toBe(false);
+  });
+
   it("blocks removal of the current account or the final super admin", () => {
     expect(getSuperAdminRemovalBlocker(2, true)).toBe("self-removal");
     expect(getSuperAdminRemovalBlocker(1, false)).toBe("last-super-admin");

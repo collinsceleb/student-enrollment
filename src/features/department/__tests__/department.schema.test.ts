@@ -67,4 +67,15 @@ describe("Department Validation Schema", () => {
     const parsed = departmentSchema.safeParse(invalidData);
     expect(parsed.success).toBe(false);
   });
+
+  it("should reject unexpected fields that could mutate persisted data", () => {
+    const parsed = departmentSchema.safeParse({
+      faculty_id: validFacultyId,
+      name: "Mechanical Engineering",
+      code: "MEE",
+      id: "33333333-3333-4333-8333-333333333333",
+    });
+
+    expect(parsed.success).toBe(false);
+  });
 });

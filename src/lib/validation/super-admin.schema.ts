@@ -1,18 +1,18 @@
 import { z } from "zod";
 
-const emailSchema = z.string().trim().toLowerCase().pipe(z.email());
-const passwordSchema = z
-  .string()
-  .min(8, "Password must be at least 8 characters long")
-  .max(128, "Password must be at most 128 characters long");
+const emailSchema = z.string().trim().toLowerCase().max(320).pipe(z.email());
 
-export const superAdminCreateSchema = z.object({
-  email: emailSchema,
-});
+export const superAdminCreateSchema = z
+  .object({
+    email: emailSchema,
+  })
+  .strict();
 
-export const superAdminUpdateSchema = z.object({
-  email: emailSchema,
-});
+export const superAdminUpdateSchema = z
+  .object({
+    email: emailSchema,
+  })
+  .strict();
 
 export type SuperAdminCreateInput = z.infer<typeof superAdminCreateSchema>;
 export type SuperAdminUpdateInput = z.infer<typeof superAdminUpdateSchema>;

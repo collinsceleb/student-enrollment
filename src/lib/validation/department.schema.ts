@@ -15,7 +15,7 @@ export const departmentSchema = z.object({
     .min(2, "Department code must be at least 2 characters")
     .max(20, "Department code must be at most 20 characters")
     .toUpperCase(),
-});
+}).strict();
 
 export const departmentInsertSchema = departmentSchema;
 

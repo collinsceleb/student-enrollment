@@ -34,7 +34,7 @@ async function requireSuperAdmin() {
   }
 
   await enforceAdminActionLimit(user.id);
-  return supabase;
+  return supabaseClient;
 }
 
 function getFacultyInput(formData: FormData) {
@@ -84,7 +84,7 @@ export async function deleteFacultyAction(formData: FormData) {
 
   if (!id.success) reportFacultyError("invalid");
 
-  const result = await deleteFacultySafely(supabase, id.data);
+  const result = await deleteFacultySafely(supabaseClient, id.data);
   if (result.status !== "success") reportFacultyError(result.status);
 
   finishFacultyAction("deleted");

@@ -20,8 +20,8 @@ async function requireSuperAdmin() {
   const supabaseClient = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  const profile = await getCurrentAdminProfile(supabase);
+  } = await supabaseClient.auth.getUser();
+  const profile = await getCurrentAdminProfile(supabaseClient);
 
   if (!user || profile.data?.role !== "SUPER_ADMIN") {
     redirect("/login");

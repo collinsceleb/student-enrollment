@@ -27,7 +27,7 @@ export async function changeOwnPasswordAction(formData: FormData) {
   } = await supabaseClient.auth.getUser();
   if (!user?.email) redirect("/login");
 
-  const profile = await getCurrentAdminProfile(supabase);
+  const profile = await getCurrentAdminProfile(supabaseClient);
   if (!profile.data?.role) redirect("/login");
 
   let reauthenticationLimit;
@@ -39,7 +39,7 @@ export async function changeOwnPasswordAction(formData: FormData) {
   if (!reauthenticationLimit.allowed) reportError("too-many-attempts");
 
   const { data: reauthenticated, error: reauthenticationError } =
-    await supabase.auth.signInWithPassword({
+    await supabaseClient.auth.signInWithPassword({
       email: user.email,
       password: parsed.data.currentPassword,
     });
@@ -48,7 +48,7 @@ export async function changeOwnPasswordAction(formData: FormData) {
     reportError("incorrect-current");
   }
 
-  const { error: passwordError } = await supabase.auth.updateUser({
+  const { error: passwordError } = await supabaseClient.auth.updateUser({
     password: parsed.data.newPassword,
   });
   if (passwordError) reportError("password-update");

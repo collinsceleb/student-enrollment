@@ -14,7 +14,7 @@ export const facultySchema = z.object({
     .min(2, "Faculty code must be at least 2 characters")
     .max(20, "Faculty code must be at most 20 characters")
     .toUpperCase(),
-});
+}).strict();
 
 export const facultyInsertSchema = facultySchema;
 

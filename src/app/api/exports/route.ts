@@ -104,7 +104,7 @@ export async function POST(request: Request) {
 
   try {
     const dataset = await buildExportDataset(
-      supabase,
+      supabaseClient,
       profile.data,
       requestBody
     );

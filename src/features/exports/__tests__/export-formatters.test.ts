@@ -60,16 +60,21 @@ describe("export format adapters", () => {
       },
     });
 
-    await workbook.xlsx.load(buffer);
+    await workbook.xlsx.load(new Uint8Array(buffer).buffer as ArrayBuffer);
     const sheet = workbook.getWorksheet(1)!;
 
-    expect(sheet.getRow(4).values.slice(1)).toEqual([
-      "Surname",
-      "First Name",
-      "Documentation Status",
-      "Remarks",
-    ]);
-    expect(sheet.getRow(5).values.slice(1)).toEqual(["MENSAH", "Ama", "", ""]);
+    expect([
+      sheet.getCell(4, 1).value,
+      sheet.getCell(4, 2).value,
+      sheet.getCell(4, 3).value,
+      sheet.getCell(4, 4).value,
+    ]).toEqual(["Surname", "First Name", "Documentation Status", "Remarks"]);
+    expect([
+      sheet.getCell(5, 1).value,
+      sheet.getCell(5, 2).value,
+      sheet.getCell(5, 3).value,
+      sheet.getCell(5, 4).value,
+    ]).toEqual(["MENSAH", "Ama", "", ""]);
   });
 
   it("preserves multi-line subtitles in Excel exports", async () => {
@@ -89,11 +94,27 @@ describe("export format adapters", () => {
       },
     });
 
-    await workbook.xlsx.load(buffer);
+    await workbook.xlsx.load(new Uint8Array(buffer).buffer as ArrayBuffer);
     const sheet = workbook.getWorksheet(1)!;
 
     expect(sheet.getCell(2, 1).value).toBe("2026 Admission Documentation");
     expect(sheet.getCell(3, 1).value).toBe("Faculty of Science");
+  });
+
+  it("keeps formula-like student values as text in Excel exports", async () => {
+    const formulaLikeValue = '=HYPERLINK("https://example.invalid","open")';
+    const workbook = new ExcelJS.Workbook();
+    const buffer = await generateExcelExport({
+      ...dataset("xlsx"),
+      rows: [[formulaLikeValue, ""]],
+    });
+
+    await workbook.xlsx.load(new Uint8Array(buffer).buffer as ArrayBuffer);
+    const cell = workbook.getWorksheet(1)!.getCell(5, 1);
+
+    expect(cell.value).toBe(formulaLikeValue);
+    expect(cell.type).toBe(ExcelJS.ValueType.String);
+    expect(cell.formula).toBeUndefined();
   });
 
   it("preserves PDF landscape layout and valid document output", async () => {

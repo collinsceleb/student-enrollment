@@ -31,4 +31,21 @@ describe("Faculty administrator validation", () => {
       }).success
     ).toBe(false);
   });
+
+  it("rejects oversized emails and unexpected privilege fields", () => {
+    expect(
+      facultyAdminCreateSchema.safeParse({
+        email: `${"a".repeat(322)}@example.com`,
+        faculty_id: "00000000-0000-4000-8000-000000000001",
+      }).success
+    ).toBe(false);
+
+    expect(
+      facultyAdminCreateSchema.safeParse({
+        email: "admin@example.com",
+        faculty_id: "00000000-0000-4000-8000-000000000001",
+        role: "SUPER_ADMIN",
+      }).success
+    ).toBe(false);
+  });
 });

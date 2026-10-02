@@ -34,7 +34,7 @@ async function requireSuperAdmin() {
   }
 
   await enforceAdminActionLimit(user.id);
-  return supabase;
+  return supabaseClient;
 }
 
 function getDepartmentInput(formData: FormData) {
