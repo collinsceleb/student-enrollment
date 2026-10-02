@@ -71,4 +71,34 @@ describe("export format adapters", () => {
     ]);
     expect(sheet.getRow(5).values.slice(1)).toEqual(["MENSAH", "Ama", "", ""]);
   });
+
+  it("preserves PDF landscape layout and valid document output", async () => {
+    const pdf = await generatePdfExport({
+      ...dataset("pdf"),
+      fields: [
+        { id: "lastName", source: "database", label: "Surname" },
+        { id: "firstName", source: "database", label: "First Name" },
+        {
+          id: "custom_documentation_status",
+          source: "export-only",
+          label: "Documentation Status",
+        },
+        { id: "custom_remarks", source: "export-only", label: "Remarks" },
+      ],
+      rows: [["MENSAH", "Ama", "", ""]],
+      metadata: {
+        ...dataset("pdf").metadata,
+        title: "Faculty of Computing",
+        subtitle: "2026 Admission Documentation",
+        orientation: "landscape",
+      },
+    });
+
+    const raw = Buffer.from(pdf).toString("latin1");
+
+    expect(raw).toContain("%PDF");
+    expect(raw).toContain("/MediaBox [0 0 841.890015 595.280029]");
+    expect(raw).toContain("/Type /Page");
+    expect(raw).toContain("/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]");
+  });
 });
