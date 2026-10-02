@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
 export default function LoginPage() {
@@ -37,9 +39,25 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <h1 className="mb-6 text-2xl font-bold text-slate-900">Admin login</h1>
+    <main className="login-page">
+      <div className="login-card">
+        <div className="mb-7 flex items-center justify-between">
+          <div className="enrollment-seal !size-11 !rounded-xl bg-[#173a32]">
+            <ShieldCheck aria-hidden="true" className="size-5" />
+          </div>
+          <span className="text-primary text-xs font-bold tracking-[0.14em] uppercase">
+            Registrar portal
+          </span>
+        </div>
+        <p className="mb-2 text-xs font-semibold tracking-[0.14em] text-slate-500 uppercase">
+          Secure sign in
+        </p>
+        <h1 className="display-heading text-3xl text-slate-900">
+          Administrator access
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Sign in with your assigned account.
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block space-y-2">
@@ -65,7 +83,10 @@ export default function LoginPage() {
           </label>
 
           {error && (
-            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div
+              role="alert"
+              className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            >
               {error}
             </div>
           )}
@@ -78,6 +99,13 @@ export default function LoginPage() {
             {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
+        <Link
+          href="/"
+          className="hover:text-primary mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition"
+        >
+          <ArrowLeft aria-hidden="true" className="size-4" />
+          Return to enrollment
+        </Link>
       </div>
     </main>
   );

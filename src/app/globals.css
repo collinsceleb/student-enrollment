@@ -46,41 +46,54 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-slate-50: #f7faf8;
+  --color-slate-100: #edf3ef;
+  --color-slate-200: #dce7e1;
+  --color-slate-300: #c5d4cc;
+  --color-slate-400: #91a59a;
+  --color-slate-500: #6f8579;
+  --color-slate-600: #53695e;
+  --color-slate-700: #3a5146;
+  --color-slate-800: #263d33;
+  --color-slate-900: #172e26;
+  --color-slate-950: #0d201a;
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(0.975 0.012 158);
+  --foreground: oklch(0.23 0.035 174);
+  --card: oklch(0.995 0.004 150);
+  --card-foreground: oklch(0.23 0.035 174);
+  --popover: oklch(0.995 0.004 150);
+  --popover-foreground: oklch(0.23 0.035 174);
+  --primary: oklch(0.48 0.105 174);
+  --primary-foreground: oklch(0.99 0.005 150);
+  --secondary: oklch(0.93 0.03 165);
+  --secondary-foreground: oklch(0.3 0.06 172);
+  --muted: oklch(0.95 0.015 155);
+  --muted-foreground: oklch(0.51 0.035 166);
+  --accent: oklch(0.92 0.105 105);
+  --accent-foreground: oklch(0.31 0.065 150);
+  --destructive: oklch(0.57 0.19 28);
+  --border: oklch(0.88 0.025 162);
+  --input: oklch(0.88 0.025 162);
+  --ring: oklch(0.55 0.11 174);
+  --chart-1: oklch(0.52 0.12 174);
+  --chart-2: oklch(0.69 0.13 91);
+  --chart-3: oklch(0.62 0.16 35);
+  --chart-4: oklch(0.56 0.11 235);
+  --chart-5: oklch(0.68 0.11 145);
+  --radius: 0.7rem;
+  --sidebar: oklch(0.23 0.035 174);
+  --sidebar-foreground: oklch(0.95 0.015 155);
+  --sidebar-primary: oklch(0.77 0.13 104);
+  --sidebar-primary-foreground: oklch(0.22 0.04 170);
+  --sidebar-accent: oklch(0.32 0.055 172);
+  --sidebar-accent-foreground: oklch(0.96 0.01 155);
+  --sidebar-border: oklch(0.36 0.04 172);
+  --sidebar-ring: oklch(0.7 0.11 160);
+  --font-display:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
 }
 
 .dark {
@@ -123,8 +136,278 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image:
+      linear-gradient(135deg, oklch(0.97 0.018 157 / 0.72), transparent 48%),
+      repeating-linear-gradient(
+        0deg,
+        transparent 0,
+        transparent 31px,
+        oklch(0.52 0.04 170 / 0.035) 32px
+      );
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;
+  }
+}
+
+.display-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.enrollment-page {
+  min-height: 100vh;
+  padding: clamp(1.25rem, 4vw, 4rem) clamp(1rem, 4vw, 3rem);
+}
+
+.enrollment-layout {
+  display: grid;
+  width: min(100%, 68rem);
+  min-height: min(52rem, calc(100vh - 5rem));
+  margin-inline: auto;
+  grid-template-columns: minmax(15rem, 0.76fr) minmax(0, 1.24fr);
+  overflow: hidden;
+  border: 1px solid oklch(0.84 0.035 164 / 0.75);
+  border-radius: 1.25rem;
+  background: var(--card);
+  box-shadow:
+    0 2rem 5rem -3rem oklch(0.28 0.07 173 / 0.26),
+    0 0.25rem 1rem oklch(0.28 0.07 173 / 0.06);
+}
+
+.enrollment-intro {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  color: #f5faf5;
+  background:
+    linear-gradient(155deg, transparent 52%, oklch(0.66 0.12 93 / 0.12)),
+    #173a32;
+}
+
+.enrollment-seal {
+  display: grid;
+  width: 3rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid oklch(0.84 0.08 104 / 0.6);
+  border-radius: 0.9rem;
+  color: #e1f18c;
+  background: oklch(0.95 0.03 145 / 0.08);
+}
+
+.enrollment-form-shell {
+  min-width: 0;
+  padding: clamp(1.25rem, 4vw, 3rem);
+}
+
+.enrollment-form {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.enrollment-form > .grid {
+  gap: 1.15rem 1.25rem;
+}
+
+.enrollment-form label {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+}
+
+.enrollment-form label > span:first-child {
+  color: var(--foreground);
+  font-size: 0.83rem;
+  font-weight: 650;
+}
+
+.enrollment-form input:not([type="checkbox"]),
+.enrollment-form select,
+.login-card input {
+  width: 100%;
+  min-height: 2.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  color: var(--foreground);
+  background: #fff;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.92rem;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.enrollment-form input::placeholder,
+.login-card input::placeholder {
+  color: oklch(0.62 0.025 164);
+}
+
+.enrollment-form input:focus,
+.enrollment-form select:focus,
+.login-card input:focus {
+  border-color: var(--primary);
+  outline: 3px solid oklch(0.5 0.1 174 / 0.16);
+  outline-offset: 1px;
+}
+
+.enrollment-form input:disabled,
+.enrollment-form select:disabled {
+  cursor: not-allowed;
+  background: var(--muted);
+}
+
+.enrollment-form [role="alert"] {
+  color: var(--destructive);
+  font-size: 0.78rem;
+}
+
+.enrollment-form > .flex.justify-end {
+  justify-content: stretch;
+}
+
+.enrollment-form > .flex.justify-end button {
+  min-height: 3rem;
+  width: 100%;
+  border-radius: 0.7rem;
+  font-weight: 700;
+}
+
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 3rem);
+}
+
+.login-card {
+  width: min(100%, 27rem);
+  border: 1px solid var(--border);
+  border-radius: 1.1rem;
+  background: var(--card);
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  box-shadow: 0 1.75rem 4rem -2.5rem oklch(0.25 0.07 173 / 0.34);
+}
+
+.login-card form {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.login-card label {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.login-card label span {
+  color: var(--foreground);
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+.login-card button[type="submit"] {
+  min-height: 3rem;
+  border: 0;
+  border-radius: 0.7rem;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition: background-color 160ms ease;
+}
+
+.login-card button[type="submit"]:hover {
+  background: oklch(0.42 0.11 174);
+}
+
+.admin-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2.5rem) clamp(0.75rem, 3vw, 2rem);
+}
+
+.admin-shell {
+  width: min(100%, 92rem);
+  margin-inline: auto;
+}
+
+.admin-page .rounded-2xl.bg-white {
+  border: 1px solid oklch(0.87 0.025 162);
+  border-radius: 0.85rem;
+  box-shadow: 0 0.65rem 2rem -1.5rem oklch(0.24 0.06 172 / 0.28);
+}
+
+.admin-page table th {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-page table td {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .enrollment-page {
+    padding: 0.75rem;
+  }
+
+  .enrollment-layout {
+    min-height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: 1rem;
+  }
+
+  .enrollment-intro {
+    min-height: 13rem;
+    gap: 2rem;
+    padding: 1.35rem;
+  }
+
+  .enrollment-intro h1 {
+    max-width: 12ch;
+    font-size: 2.15rem;
+    line-height: 1.03;
+  }
+
+  .enrollment-form-shell {
+    padding: 1.25rem;
+  }
+
+  .enrollment-form > .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .enrollment-form > .grid > label {
+    grid-column: 1 / -1;
+  }
+
+  .admin-page .rounded-2xl.bg-white {
+    padding: 1rem;
+  }
+
+  .admin-page table {
+    min-width: 38rem;
+  }
+
+  .admin-page .overflow-hidden.rounded-lg {
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

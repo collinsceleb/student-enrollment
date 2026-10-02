@@ -104,8 +104,8 @@ export default async function AdminDashboardPage({
     const summary = buildFacultyDashboardSummary(filteredStudents);
 
     return (
-      <main className="min-h-screen bg-slate-100 px-4 py-10">
-        <div className="mx-auto max-w-6xl space-y-6">
+      <main className="admin-page">
+        <div className="admin-shell space-y-6">
           <AdminRateLimitNotice error={resolvedSearchParams.adminError} />
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div className="flex items-center justify-between gap-4">
@@ -361,8 +361,8 @@ export default async function AdminDashboardPage({
   }));
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-10">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <main className="admin-page">
+      <div className="admin-shell space-y-6">
         <AdminRateLimitNotice error={resolvedSearchParams.adminError} />
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <div className="flex items-center justify-between gap-4">
