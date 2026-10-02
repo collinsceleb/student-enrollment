@@ -107,6 +107,12 @@ export function createCustomExportFieldRequest(
   };
 }
 
+export function getExportOrientation(
+  fieldCount: number
+): NormalizedExportDataset["metadata"]["orientation"] {
+  return fieldCount > 6 ? "landscape" : "portrait";
+}
+
 export function authorizeExportScope(
   profile: Pick<ExportProfile, "role" | "faculty_id">,
   request: Pick<ExportRequest, "scope" | "faculty_id" | "department_id">

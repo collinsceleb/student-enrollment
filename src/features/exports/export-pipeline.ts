@@ -6,6 +6,7 @@ import {
   normalizeExportDataset,
   authorizeExportScope,
   ExportPipelineError,
+  getExportOrientation,
 } from "@/features/exports/export-fields";
 import { exportRequestSchema } from "@/features/exports/export.schema";
 import type {
@@ -165,6 +166,8 @@ export async function buildExportDataset(
   const records = await resolveSelectedRecords(supabase, scope);
   const createdAt = now.toISOString();
 
+  const totalSelectedFields = request.fields?.length ?? 8;
+
   return normalizeExportDataset(
     records,
     request.fields,
@@ -173,7 +176,7 @@ export async function buildExportDataset(
     {
       title,
       subtitle: `${records.length} student records`,
-      orientation: (request.fields?.length ?? 8) > 6 ? "landscape" : "portrait",
+      orientation: getExportOrientation(totalSelectedFields),
       createdAt,
     }
   );

@@ -4,6 +4,7 @@ import {
   authorizeExportScope,
   createCustomExportFieldRequest,
   databaseExportFields,
+  getExportOrientation,
   normalizeExportDataset,
   resolveExportFields,
 } from "@/features/exports/export-fields";
@@ -181,6 +182,13 @@ describe("export fields and scopes", () => {
         { scope: "department", department_id: "department-1" }
       )
     ).toBeNull();
+  });
+
+  it("counts export-only fields when selecting orientation", () => {
+    expect(getExportOrientation(5)).toBe("portrait");
+    expect(getExportOrientation(6)).toBe("portrait");
+    expect(getExportOrientation(7)).toBe("landscape");
+    expect(getExportOrientation(12)).toBe("landscape");
   });
 
   it("rejects unknown field identifiers and invalid scope shapes", () => {
