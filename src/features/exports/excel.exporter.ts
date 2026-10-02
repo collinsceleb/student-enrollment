@@ -24,6 +24,7 @@ export async function generateExcelExport(
   sheet.mergeCells(2, 1, 2, columnCount);
   sheet.getCell(2, 1).value = dataset.metadata.subtitle;
   sheet.getCell(2, 1).font = { italic: true, size: 10 };
+  sheet.getCell(2, 1).alignment = { wrapText: true, vertical: "middle" };
   sheet.addRow([]);
   const headerRow = sheet.addRow(dataset.fields.map((field) => field.label));
   headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };

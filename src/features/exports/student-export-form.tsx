@@ -300,10 +300,11 @@ export function StudentExportForm({
 
         <label className="block space-y-1.5 sm:col-span-2 xl:col-span-2">
           <span className="text-sm font-medium text-slate-700">Subtitle</span>
-          <input
+          <textarea
             value={subtitle}
             onChange={(event) => setSubtitle(event.target.value)}
-            placeholder="2026 Admission Documentation"
+            rows={3}
+            placeholder={"2026 Admission Documentation\nFaculty of Science"}
             className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
           />
         </label>

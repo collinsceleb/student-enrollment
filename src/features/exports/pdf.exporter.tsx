@@ -68,11 +68,12 @@ export async function generatePdfExport(
         style: styles.page,
       },
       createElement(Text, { style: styles.title }, dataset.metadata.title),
-      createElement(
-        Text,
-        { style: styles.subtitle },
-        dataset.metadata.subtitle
-      ),
+      ...dataset.metadata.subtitle
+        .split(/\r?\n/)
+        .filter((line) => line.trim().length > 0)
+        .map((line) =>
+          createElement(Text, { key: line, style: styles.subtitle }, line)
+        ),
       createElement(
         View,
         { style: styles.table },

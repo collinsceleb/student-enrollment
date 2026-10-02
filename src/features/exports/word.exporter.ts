@@ -73,12 +73,16 @@ export async function generateWordExport(
               }),
             ],
           }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [
-              new TextRun({ text: dataset.metadata.subtitle, italics: true }),
-            ],
-          }),
+          ...dataset.metadata.subtitle
+            .split(/\r?\n/)
+            .filter((line) => line.trim().length > 0)
+            .map(
+              (line) =>
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  children: [new TextRun({ text: line, italics: true })],
+                })
+            ),
           new Paragraph(""),
           new Table({
             width: { size: totalWidth, type: WidthType.DXA },
