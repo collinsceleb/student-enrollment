@@ -14,7 +14,7 @@ export default async function FacultyDashboardPage() {
   const profile = await getCurrentAdminProfile(supabaseClient);
 
   if (!profile.data?.role) {
-    redirect("/login");
+    redirect("/unauthorized");
   }
 
   redirect("/admin");

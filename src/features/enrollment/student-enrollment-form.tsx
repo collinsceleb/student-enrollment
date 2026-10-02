@@ -85,32 +85,40 @@ export function StudentEnrollmentForm({
   async function onSubmit(values: StudentFormValues) {
     setSubmissionState({ status: "idle" });
 
-    const response = await fetch("/api/enrollment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(values),
-    });
+    try {
+      const response = await fetch("/api/enrollment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
 
-    const payload = (await response.json().catch(() => ({}))) as {
-      message?: string;
-      errors?: Record<string, string[]>;
-    };
+      const payload = (await response.json().catch(() => ({}))) as {
+        message?: string;
+        errors?: Record<string, string[]>;
+      };
 
-    if (!response.ok) {
-      const errorMessage =
-        payload.message ??
-        "Please correct the highlighted errors and try again.";
-      setSubmissionState({ status: "error", message: errorMessage });
-      return;
+      if (!response.ok) {
+        const errorMessage =
+          payload.message ??
+          "Please correct the highlighted errors and try again.";
+        setSubmissionState({ status: "error", message: errorMessage });
+        return;
+      }
+
+      reset();
+      setSubmissionState({
+        status: "success",
+        message: payload.message ?? "Enrollment submitted successfully.",
+      });
+    } catch {
+      setSubmissionState({
+        status: "error",
+        message:
+          "Enrollment could not be submitted. Check your connection and try again.",
+      });
     }
-
-    reset();
-    setSubmissionState({
-      status: "success",
-      message: payload.message ?? "Enrollment submitted successfully.",
-    });
   }
 
   return (

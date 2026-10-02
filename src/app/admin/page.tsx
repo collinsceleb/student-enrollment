@@ -47,7 +47,7 @@ export default async function AdminDashboardPage({
   const profile = await getCurrentAdminProfile(supabaseClient);
 
   if (!profile.data?.role) {
-    redirect("/login");
+    redirect("/unauthorized");
   }
   if (!profile.data.has_changed_password) {
     redirect("/change-password");
@@ -67,7 +67,7 @@ export default async function AdminDashboardPage({
     const facultyId = profile.data.faculty_id;
 
     if (!facultyId) {
-      redirect("/login");
+      redirect("/unauthorized");
     }
 
     const departments = await getDepartmentsByFaculty(
@@ -301,7 +301,7 @@ export default async function AdminDashboardPage({
   }
 
   if (profile.data.role !== "SUPER_ADMIN") {
-    redirect("/login");
+    redirect("/unauthorized");
   }
 
   const adminClient = createAdminClient();
