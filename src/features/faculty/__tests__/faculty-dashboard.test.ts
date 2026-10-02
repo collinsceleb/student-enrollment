@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { buildFacultyDashboardSummary } from "@/features/faculty/faculty.service";
+import {
+  buildFacultyDashboardSummary,
+  filterStudentsForFacultyDashboard,
+} from "@/features/faculty/faculty.service";
+import type { StudentWithRelations } from "@/types/student";
 
 describe("Faculty dashboard summary", () => {
   it("aggregates student counts and department totals correctly", () => {
-    const summary = buildFacultyDashboardSummary([
+    const students: StudentWithRelations[] = [
       {
         id: "1",
         first_name: "Ada",
@@ -89,7 +93,8 @@ describe("Faculty dashboard summary", () => {
           updated_at: "",
         },
       },
-    ] as any);
+    ];
+    const summary = buildFacultyDashboardSummary(students);
 
     expect(summary.totalStudents).toBe(3);
     expect(summary.jambiteCount).toBe(2);
@@ -98,5 +103,13 @@ describe("Faculty dashboard summary", () => {
       { departmentName: "Computer Science", total: 2 },
       { departmentName: "Electrical", total: 1 },
     ]);
+
+    expect(
+      filterStudentsForFacultyDashboard(students, {
+        search: "ada lovelace",
+        departmentId: "dept-1",
+        admissionType: "JAMBITE",
+      }).map((student) => student.id)
+    ).toEqual(["1"]);
   });
 });

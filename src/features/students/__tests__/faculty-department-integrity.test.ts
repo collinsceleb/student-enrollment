@@ -2,12 +2,14 @@ import { describe, it, expect, vi } from "vitest";
 import {
   verifyFacultyDepartmentMatch,
   createStudent,
+  DuplicateRegistrationNumberError,
   updateStudent,
   FacultyDepartmentMismatchError,
   DepartmentNotFoundError,
 } from "@/features/students/student.service";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
+import type { StudentInsert, StudentUpdate } from "@/types/student";
 
 describe("Database & Server Integrity (Faculty / Department Association)", () => {
   // Setup mock data based on the specification's exact example:
@@ -24,7 +26,10 @@ describe("Database & Server Integrity (Faculty / Department Association)", () =>
     [DEPT_B1]: { id: DEPT_B1, faculty_id: FACULTY_B },
   };
 
-  function createMockSupabase(insertedRows: any[] = []) {
+  function createMockSupabase(
+    insertedRows: Array<StudentInsert & { id?: string }> = [],
+    insertError: { code: string; message: string } | null = null
+  ) {
     return {
       from: vi.fn((table: string) => {
         if (table === "departments") {
@@ -42,12 +47,14 @@ describe("Database & Server Integrity (Faculty / Department Association)", () =>
 
         if (table === "students") {
           return {
-            insert: vi.fn((row: any) => ({
+            insert: vi.fn((row: StudentInsert) => ({
               select: vi.fn(() => ({
                 single: vi.fn(async () => {
-                  insertedRows.push(row);
+                  if (insertError) return { data: null, error: insertError };
+                  const createdRow = { id: "new-student-id", ...row };
+                  insertedRows.push(createdRow);
                   return {
-                    data: { id: "new-student-id", ...row },
+                    data: createdRow,
                     error: null,
                   };
                 }),
@@ -56,7 +63,9 @@ describe("Database & Server Integrity (Faculty / Department Association)", () =>
             select: vi.fn(() => ({
               eq: vi.fn((col: string, id: string) => ({
                 single: vi.fn(async () => {
-                  const student = insertedRows.find((s) => s.id === id);
+                  const student = insertedRows.find(
+                    (insertedRow) => insertedRow.id === id
+                  );
                   return {
                     data: student ?? {
                       faculty_id: FACULTY_A,
@@ -67,7 +76,7 @@ describe("Database & Server Integrity (Faculty / Department Association)", () =>
                 }),
               })),
             })),
-            update: vi.fn((updates: any) => ({
+            update: vi.fn((updates: StudentUpdate) => ({
               eq: vi.fn((col: string, id: string) => ({
                 select: vi.fn(() => ({
                   single: vi.fn(async () => {
@@ -123,7 +132,7 @@ describe("Database & Server Integrity (Faculty / Department Association)", () =>
 
   describe("createStudent() server integrity enforcement", () => {
     it("should reject and abort insert when a manipulated request sends Faculty A with Department B1", async () => {
-      const insertedRows: any[] = [];
+      const insertedRows: Array<StudentInsert & { id?: string }> = [];
       const mockSupabase = createMockSupabase(insertedRows);
 
       const manipulatedEnrollment = {
@@ -141,11 +150,11 @@ describe("Database & Server Integrity (Faculty / Department Association)", () =>
       ).rejects.toThrow(FacultyDepartmentMismatchError);
 
       // Verify that no student was inserted into the database
-      expect(insertedRows.length).toBe(0);
+      expect(insertedRows).toHaveLength(0);
     });
 
     it("should successfully insert when Faculty A with Department A1 is submitted", async () => {
-      const insertedRows: any[] = [];
+      const insertedRows: Array<StudentInsert & { id?: string }> = [];
       const mockSupabase = createMockSupabase(insertedRows);
 
       const legitimateEnrollment = {
@@ -161,7 +170,27 @@ describe("Database & Server Integrity (Faculty / Department Association)", () =>
       const created = await createStudent(mockSupabase, legitimateEnrollment);
       expect(created).toBeDefined();
       expect(created.registration_number).toBe("SCI/2026/042");
-      expect(insertedRows.length).toBe(1);
+      expect(insertedRows).toHaveLength(1);
+    });
+
+    it("should reject duplicate registration numbers", async () => {
+      const mockSupabase = createMockSupabase([], {
+        code: "23505",
+        message: "duplicate key",
+      });
+      const duplicateEnrollment = {
+        first_name: "Sarah",
+        last_name: "Connor",
+        phone_number: "08099998888",
+        registration_number: "SCI/2026/042",
+        faculty_id: FACULTY_A,
+        department_id: DEPT_A1,
+        admission_type: "DIRECT_ENTRY" as const,
+      };
+
+      await expect(
+        createStudent(mockSupabase, duplicateEnrollment)
+      ).rejects.toBeInstanceOf(DuplicateRegistrationNumberError);
     });
   });
 
