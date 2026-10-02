@@ -15,6 +15,7 @@ import { DepartmentManagementPanel } from "@/features/department/department-mana
 import { getDepartmentsByFaculty } from "@/features/department/department.service";
 import { FacultyManagementPanel } from "@/features/faculty/faculty-management-panel";
 import { StudentExportForm } from "@/features/exports/student-export-form";
+import { StudentDataDeletionPanel } from "@/features/students/student-data-deletion-panel";
 import { getStudentsByFacultyPage } from "@/features/students/student.service";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -37,6 +38,8 @@ export default async function AdminDashboardPage({
     superAdminStatus?: string;
     superAdminError?: string;
     adminError?: string;
+    studentDataStatus?: string;
+    studentDataError?: string;
   }>;
 }>) {
   const supabaseClient = await createClient();
@@ -526,6 +529,11 @@ export default async function AdminDashboardPage({
           mode="super-admin"
           faculties={faculties}
           departments={departments}
+        />
+
+        <StudentDataDeletionPanel
+          status={resolvedSearchParams.studentDataStatus}
+          error={resolvedSearchParams.studentDataError}
         />
       </div>
     </main>
