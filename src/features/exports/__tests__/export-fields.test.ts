@@ -121,16 +121,40 @@ describe("export fields and scopes", () => {
     });
   });
 
-  it("keeps department scope valid for super-admin exports without a synthetic blank faculty id", () => {
+  it("resolves the real phase-24 scope from selected faculty and department filters", () => {
     expect(
       authorizeExportScope(
-        { role: "SUPER_ADMIN", faculty_id: null },
-        { scope: "department", department_id: "department-1" }
+        { role: "FACULTY_ADMIN", faculty_id: "faculty-1" },
+        { scope: "faculty" }
+      )
+    ).toEqual({ kind: "faculty", facultyId: "faculty-1" });
+    expect(
+      authorizeExportScope(
+        { role: "FACULTY_ADMIN", faculty_id: "faculty-1" },
+        { scope: "department", department_id: "department-2" }
       )
     ).toEqual({
       kind: "department",
-      departmentId: "department-1",
+      departmentId: "department-2",
+      facultyId: "faculty-1",
     });
+    expect(
+      authorizeExportScope(
+        { role: "FACULTY_ADMIN", faculty_id: "faculty-1" },
+        {
+          scope: "department",
+          department_id: "department-2",
+          faculty_id: "faculty-2",
+        }
+      )
+    ).toBeNull();
+
+    expect(
+      authorizeExportScope(
+        { role: "SUPER_ADMIN", faculty_id: null },
+        { scope: "all" }
+      )
+    ).toEqual({ kind: "all" });
     expect(
       authorizeExportScope(
         { role: "SUPER_ADMIN", faculty_id: null },
@@ -140,9 +164,23 @@ describe("export fields and scopes", () => {
     expect(
       authorizeExportScope(
         { role: "SUPER_ADMIN", faculty_id: null },
-        { scope: "all" }
+        {
+          scope: "department",
+          department_id: "department-1",
+          faculty_id: "faculty-1",
+        }
       )
-    ).toEqual({ kind: "all" });
+    ).toEqual({
+      kind: "department",
+      departmentId: "department-1",
+      facultyId: "faculty-1",
+    });
+    expect(
+      authorizeExportScope(
+        { role: "SUPER_ADMIN", faculty_id: null },
+        { scope: "department", department_id: "department-1" }
+      )
+    ).toBeNull();
   });
 
   it("rejects unknown field identifiers and invalid scope shapes", () => {

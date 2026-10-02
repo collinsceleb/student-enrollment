@@ -129,17 +129,22 @@ export function StudentExportForm({
     setIsSubmitting(true);
     setError(null);
 
+    const resolvedScope: ExportScope =
+      scope === "department" && departmentId ? "department" : "faculty";
+    const resolvedAllData =
+      mode === "super-admin" && !facultyId && !departmentId && scope === "all";
+
     const body: Record<string, unknown> = {
       format,
-      scope,
+      scope: resolvedAllData ? "all" : resolvedScope,
       fields: selectedFields,
     };
-    if (mode === "super-admin" && scope === "faculty") {
+
+    if (mode === "super-admin" && facultyId) {
       body.faculty_id = facultyId;
     }
-    if (scope === "department") {
+    if (departmentId) {
       body.department_id = departmentId;
-      if (mode === "super-admin") body.faculty_id = facultyId;
     }
 
     if (selectedFields.length === 0) {

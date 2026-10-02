@@ -111,36 +111,41 @@ export function authorizeExportScope(
   profile: Pick<ExportProfile, "role" | "faculty_id">,
   request: Pick<ExportRequest, "scope" | "faculty_id" | "department_id">
 ): AuthorizedExportScope | null {
+  const explicitFacultyId = request.faculty_id ?? null;
+  const hasDepartment = Boolean(request.department_id);
+  const hasFaculty = Boolean(explicitFacultyId || profile.faculty_id);
+
   if (profile.role === "FACULTY_ADMIN") {
     if (!profile.faculty_id || request.scope === "all") return null;
-    if (request.scope === "faculty") {
-      return { kind: "faculty", facultyId: profile.faculty_id };
+
+    if (hasDepartment) {
+      if (explicitFacultyId && explicitFacultyId !== profile.faculty_id) {
+        return null;
+      }
+      return {
+        kind: "department",
+        departmentId: request.department_id!,
+        facultyId: profile.faculty_id,
+      };
     }
-    if (!request.department_id) return null;
+
+    return { kind: "faculty", facultyId: profile.faculty_id };
+  }
+
+  if (!hasFaculty && !hasDepartment) return { kind: "all" };
+  if (!hasFaculty) return null;
+  if (hasDepartment) {
     return {
       kind: "department",
-      departmentId: request.department_id,
-      facultyId: profile.faculty_id,
+      departmentId: request.department_id!,
+      facultyId: explicitFacultyId ?? profile.faculty_id!,
     };
   }
 
-  if (request.scope === "all") return { kind: "all" };
-  if (request.scope === "faculty" && request.faculty_id) {
-    return { kind: "faculty", facultyId: request.faculty_id };
-  }
-  if (request.scope === "department" && request.department_id) {
-    return request.faculty_id
-      ? {
-          kind: "department",
-          departmentId: request.department_id,
-          facultyId: request.faculty_id,
-        }
-      : {
-          kind: "department",
-          departmentId: request.department_id,
-        };
-  }
-  return null;
+  return {
+    kind: "faculty",
+    facultyId: explicitFacultyId ?? profile.faculty_id!,
+  };
 }
 
 export function resolveExportFields(
