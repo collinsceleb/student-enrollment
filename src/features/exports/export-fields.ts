@@ -129,11 +129,16 @@ export function authorizeExportScope(
     return { kind: "faculty", facultyId: request.faculty_id };
   }
   if (request.scope === "department" && request.department_id) {
-    return {
-      kind: "department",
-      departmentId: request.department_id,
-      facultyId: request.faculty_id ?? "",
-    };
+    return request.faculty_id
+      ? {
+          kind: "department",
+          departmentId: request.department_id,
+          facultyId: request.faculty_id,
+        }
+      : {
+          kind: "department",
+          departmentId: request.department_id,
+        };
   }
   return null;
 }

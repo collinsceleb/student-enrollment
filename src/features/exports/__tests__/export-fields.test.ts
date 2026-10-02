@@ -121,6 +121,30 @@ describe("export fields and scopes", () => {
     });
   });
 
+  it("keeps department scope valid for super-admin exports without a synthetic blank faculty id", () => {
+    expect(
+      authorizeExportScope(
+        { role: "SUPER_ADMIN", faculty_id: null },
+        { scope: "department", department_id: "department-1" }
+      )
+    ).toEqual({
+      kind: "department",
+      departmentId: "department-1",
+    });
+    expect(
+      authorizeExportScope(
+        { role: "SUPER_ADMIN", faculty_id: null },
+        { scope: "faculty", faculty_id: "faculty-1" }
+      )
+    ).toEqual({ kind: "faculty", facultyId: "faculty-1" });
+    expect(
+      authorizeExportScope(
+        { role: "SUPER_ADMIN", faculty_id: null },
+        { scope: "all" }
+      )
+    ).toEqual({ kind: "all" });
+  });
+
   it("rejects unknown field identifiers and invalid scope shapes", () => {
     expect(
       exportRequestSchema.safeParse({
