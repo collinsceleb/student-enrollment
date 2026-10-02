@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-import { createClient } from "@/lib/supabase/client";
-
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,22 +13,27 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setError(null);
 
-    const supabaseClient = createClient();
-    const { error: signInError } = await supabaseClient.auth.signInWithPassword(
-      {
-        email,
-        password,
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        message?: string;
+      };
+
+      if (!response.ok) {
+        setError(result.message ?? "Unable to sign in. Please try again.");
+        return;
       }
-    );
 
-    setIsSubmitting(false);
-
-    if (signInError) {
-      setError(signInError.message);
-      return;
+      window.location.replace("/admin");
+    } catch {
+      setError("Unable to sign in. Check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    window.location.replace("/admin");
   }
 
   return (

@@ -12,6 +12,7 @@ import {
   RequestBodyTooLargeError,
 } from "@/lib/server/read-limited-json";
 import { verifyTurnstileToken } from "@/lib/server/turnstile";
+import { consumeRateLimit, getRequestIdentity } from "@/lib/server/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { studentSchema } from "@/lib/validation/student.schema";
 
@@ -29,6 +30,34 @@ function errorResponse(message: string, status: number) {
     { message },
     { status, headers: { "Cache-Control": "no-store" } }
   );
+}
+
+async function checkEnrollmentLimit(
+  request: Request
+): Promise<Response | null> {
+  try {
+    const decision = await consumeRateLimit(
+      "enrollment",
+      getRequestIdentity(request)
+    );
+    if (decision.allowed) return null;
+
+    return NextResponse.json(
+      { message: "Too many enrollment attempts. Please try again later." },
+      {
+        status: 429,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": String(decision.retryAfterSeconds),
+        },
+      }
+    );
+  } catch {
+    return errorResponse(
+      "Enrollment is temporarily unavailable. Please try again.",
+      503
+    );
+  }
 }
 
 async function prepareEnrollmentRequest(
@@ -94,6 +123,9 @@ async function prepareEnrollmentRequest(
 }
 
 export async function POST(request: Request) {
+  const rateLimitResponse = await checkEnrollmentLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   const preflight = await prepareEnrollmentRequest(request);
   if (!preflight.ok) return preflight.response;
 

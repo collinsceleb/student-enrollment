@@ -12,11 +12,12 @@ import {
 import { superAdminUpdateSchema } from "@/lib/validation/super-admin.schema";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { enforceAdminActionLimit } from "@/lib/server/admin-action-limit";
 
 const userIdSchema = z.uuid();
 
 async function requireSuperAdmin() {
-  const supabase = await createClient();
+  const supabaseClient = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -32,6 +33,7 @@ async function requireSuperAdmin() {
     redirect("/login");
   }
 
+  await enforceAdminActionLimit(user.id);
   return user.id;
 }
 

@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
   createStudent: vi.fn(),
   createAdminClient: vi.fn(() => ({})),
   verifyTurnstileToken: vi.fn(),
+  consumeRateLimit: vi.fn(),
+  getRequestIdentity: vi.fn(() => "203.0.113.5"),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -18,6 +20,10 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 vi.mock("@/lib/server/turnstile", () => ({
   verifyTurnstileToken: mocks.verifyTurnstileToken,
+}));
+vi.mock("@/lib/server/rate-limit", () => ({
+  consumeRateLimit: mocks.consumeRateLimit,
+  getRequestIdentity: mocks.getRequestIdentity,
 }));
 
 import { POST } from "@/app/api/enrollment/route";
@@ -43,12 +49,32 @@ function request(body: Record<string, unknown>) {
 describe("POST /api/enrollment Turnstile gate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.consumeRateLimit.mockResolvedValue({
+      allowed: true,
+      retryAfterSeconds: 0,
+    });
   });
 
   it("rejects a missing token before contacting verification or the database", async () => {
     const response = await POST(request(validStudent));
 
     expect(response.status).toBe(403);
+    expect(mocks.verifyTurnstileToken).not.toHaveBeenCalled();
+    expect(mocks.createStudent).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 with retry timing before verification when the IP is limited", async () => {
+    mocks.consumeRateLimit.mockResolvedValue({
+      allowed: false,
+      retryAfterSeconds: 47,
+    });
+
+    const response = await POST(
+      request({ ...validStudent, turnstile_token: "valid" })
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("47");
     expect(mocks.verifyTurnstileToken).not.toHaveBeenCalled();
     expect(mocks.createStudent).not.toHaveBeenCalled();
   });

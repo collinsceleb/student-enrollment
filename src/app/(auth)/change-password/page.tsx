@@ -7,6 +7,10 @@ import { changeOwnPasswordAction } from "@/features/auth/password-change.actions
 const errorMessages: Record<string, string> = {
   invalid: "Enter a valid current password and matching new passwords.",
   "incorrect-current": "The current or temporary password is incorrect.",
+  "too-many-attempts":
+    "Too many password checks. Please wait before trying again.",
+  "rate-limit-unavailable":
+    "Password changes are temporarily unavailable. Please try again.",
   "password-update": "The new password could not be saved. Please try again.",
   "profile-update":
     "The password changed, but account setup could not be completed. Sign in with the new password and try again.",

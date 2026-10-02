@@ -7,6 +7,7 @@ import {
 } from "@/features/faculty/faculty.service";
 import { getCurrentAdminProfile } from "@/features/auth/auth.service";
 import { FacultyAdminManagementPanel } from "@/features/administration/faculty-admin-management-panel";
+import { AdminRateLimitNotice } from "@/features/administration/admin-rate-limit-notice";
 import { getFacultyAdministrators } from "@/features/administration/faculty-admin-management.service";
 import { SuperAdminManagementPanel } from "@/features/administration/super-admin-management-panel";
 import { getSuperAdministrators } from "@/features/administration/super-admin-management.service";
@@ -35,6 +36,7 @@ export default async function AdminDashboardPage({
     facultyAdminError?: string;
     superAdminStatus?: string;
     superAdminError?: string;
+    adminError?: string;
   }>;
 }>) {
   const supabaseClient = await createClient();
@@ -101,6 +103,7 @@ export default async function AdminDashboardPage({
     return (
       <main className="min-h-screen bg-slate-100 px-4 py-10">
         <div className="mx-auto max-w-6xl space-y-6">
+          <AdminRateLimitNotice error={resolvedSearchParams.adminError} />
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -357,6 +360,7 @@ export default async function AdminDashboardPage({
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-10">
       <div className="mx-auto max-w-7xl space-y-6">
+        <AdminRateLimitNotice error={resolvedSearchParams.adminError} />
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <div className="flex items-center justify-between gap-4">
             <div>

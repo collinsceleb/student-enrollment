@@ -17,15 +17,16 @@ import { facultyAdminCreateSchema } from "@/lib/validation/faculty-admin.schema"
 import { superAdminCreateSchema } from "@/lib/validation/super-admin.schema";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { enforceAdminActionLimit } from "@/lib/server/admin-action-limit";
 
 const userIdSchema = z.uuid();
 
 async function requireSuperAdmin(): Promise<string> {
-  const supabase = await createClient();
+  const supabaseClient = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  const profile = await getCurrentAdminProfile(supabase);
+  } = await supabaseClient.auth.getUser();
+  const profile = await getCurrentAdminProfile(supabaseClient);
 
   if (!user || profile.data?.role !== "SUPER_ADMIN") {
     redirect("/login");
@@ -37,6 +38,7 @@ async function requireSuperAdmin(): Promise<string> {
     redirect("/login");
   }
 
+  await enforceAdminActionLimit(user.id);
   return user.id;
 }
 

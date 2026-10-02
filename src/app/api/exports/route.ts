@@ -9,6 +9,7 @@ import {
   readLimitedJson,
   RequestBodyTooLargeError,
 } from "@/lib/server/read-limited-json";
+import { consumeRateLimit } from "@/lib/server/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -34,15 +35,15 @@ function getFilename(dataset: Awaited<ReturnType<typeof buildExportDataset>>) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabaseClient = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabaseClient.auth.getUser();
   if (!user) {
     return Response.json({ error: "unauthenticated" }, { status: 401 });
   }
 
-  const profile = await getCurrentAdminProfile(supabase);
+  const profile = await getCurrentAdminProfile(supabaseClient);
   if (!profile.data?.role) {
     return Response.json({ error: "unauthorized" }, { status: 403 });
   }
@@ -50,6 +51,28 @@ export async function POST(request: Request) {
     return Response.json(
       { error: "reauthentication-required" },
       { status: 401 }
+    );
+  }
+
+  let exportLimit;
+  try {
+    exportLimit = await consumeRateLimit("export", user.id);
+  } catch {
+    return Response.json(
+      { error: "rate-limit-unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+  if (!exportLimit.allowed) {
+    return Response.json(
+      { error: "rate-limited" },
+      {
+        status: 429,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": String(exportLimit.retryAfterSeconds),
+        },
+      }
     );
   }
 

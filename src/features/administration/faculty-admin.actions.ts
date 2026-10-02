@@ -12,14 +12,18 @@ import {
 import { facultyAdminAssignmentSchema } from "@/lib/validation/faculty-admin.schema";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { enforceAdminActionLimit } from "@/lib/server/admin-action-limit";
 
 const userIdSchema = z.uuid();
 
 async function requireSuperAdmin() {
-  const supabase = await createClient();
-  const profile = await getCurrentAdminProfile(supabase);
+  const supabaseClient = await createClient();
+  const {
+    data: { user },
+  } = await supabaseClient.auth.getUser();
+  const profile = await getCurrentAdminProfile(supabaseClient);
 
-  if (profile.data?.role !== "SUPER_ADMIN") {
+  if (!user || profile.data?.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
   if (!profile.data.has_changed_password) {
@@ -28,6 +32,7 @@ async function requireSuperAdmin() {
   if (!profile.data.session_is_current) {
     redirect("/login");
   }
+  await enforceAdminActionLimit(user.id);
   return createAdminClient();
 }
 

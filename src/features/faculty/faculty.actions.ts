@@ -12,14 +12,18 @@ import {
 } from "@/features/faculty/faculty-management.service";
 import { facultySchema } from "@/lib/validation/faculty.schema";
 import { createClient } from "@/lib/supabase/server";
+import { enforceAdminActionLimit } from "@/lib/server/admin-action-limit";
 
 const facultyIdSchema = z.uuid();
 
 async function requireSuperAdmin() {
-  const supabase = await createClient();
-  const profile = await getCurrentAdminProfile(supabase);
+  const supabaseClient = await createClient();
+  const {
+    data: { user },
+  } = await supabaseClient.auth.getUser();
+  const profile = await getCurrentAdminProfile(supabaseClient);
 
-  if (profile.data?.role !== "SUPER_ADMIN") {
+  if (!user || profile.data?.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
   if (!profile.data.has_changed_password) {
@@ -29,6 +33,7 @@ async function requireSuperAdmin() {
     redirect("/login");
   }
 
+  await enforceAdminActionLimit(user.id);
   return supabase;
 }
 
@@ -61,20 +66,20 @@ export async function createFacultyAction(formData: FormData) {
 }
 
 export async function updateFacultyAction(formData: FormData) {
-  const supabase = await requireSuperAdmin();
+  const supabaseClient = await requireSuperAdmin();
   const parsed = getFacultyInput(formData);
   const id = facultyIdSchema.safeParse(formData.get("id"));
 
   if (!parsed.success || !id.success) reportFacultyError("invalid");
 
-  const result = await updateFaculty(supabase, id.data, parsed.data);
+  const result = await updateFaculty(supabaseClient, id.data, parsed.data);
   if (result.status !== "success") reportFacultyError(result.status);
 
   finishFacultyAction("updated");
 }
 
 export async function deleteFacultyAction(formData: FormData) {
-  const supabase = await requireSuperAdmin();
+  const supabaseClient = await requireSuperAdmin();
   const id = facultyIdSchema.safeParse(formData.get("id"));
 
   if (!id.success) reportFacultyError("invalid");

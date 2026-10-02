@@ -7,6 +7,7 @@ import { getCurrentAdminProfile } from "@/features/auth/auth.service";
 import { passwordChangeSchema } from "@/lib/validation/password-change.schema";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { consumeRateLimit } from "@/lib/server/rate-limit";
 
 function reportError(code: string): never {
   redirect(`/change-password?error=${code}`);
@@ -20,14 +21,22 @@ export async function changeOwnPasswordAction(formData: FormData) {
   });
   if (!parsed.success) reportError("invalid");
 
-  const supabase = await createClient();
+  const supabaseClient = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabaseClient.auth.getUser();
   if (!user?.email) redirect("/login");
 
   const profile = await getCurrentAdminProfile(supabase);
   if (!profile.data?.role) redirect("/login");
+
+  let reauthenticationLimit;
+  try {
+    reauthenticationLimit = await consumeRateLimit("password-reauth", user.id);
+  } catch {
+    reportError("rate-limit-unavailable");
+  }
+  if (!reauthenticationLimit.allowed) reportError("too-many-attempts");
 
   const { data: reauthenticated, error: reauthenticationError } =
     await supabase.auth.signInWithPassword({

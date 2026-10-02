@@ -12,14 +12,18 @@ import {
 } from "@/features/department/department-management.service";
 import { departmentSchema } from "@/lib/validation/department.schema";
 import { createClient } from "@/lib/supabase/server";
+import { enforceAdminActionLimit } from "@/lib/server/admin-action-limit";
 
 const departmentIdSchema = z.uuid();
 
 async function requireSuperAdmin() {
-  const supabase = await createClient();
-  const profile = await getCurrentAdminProfile(supabase);
+  const supabaseClient = await createClient();
+  const {
+    data: { user },
+  } = await supabaseClient.auth.getUser();
+  const profile = await getCurrentAdminProfile(supabaseClient);
 
-  if (profile.data?.role !== "SUPER_ADMIN") {
+  if (!user || profile.data?.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
   if (!profile.data.has_changed_password) {
@@ -29,6 +33,7 @@ async function requireSuperAdmin() {
     redirect("/login");
   }
 
+  await enforceAdminActionLimit(user.id);
   return supabase;
 }
 
@@ -50,37 +55,37 @@ function reportDepartmentError(status: string): never {
 }
 
 export async function createDepartmentAction(formData: FormData) {
-  const supabase = await requireSuperAdmin();
+  const supabaseClient = await requireSuperAdmin();
   const parsed = getDepartmentInput(formData);
 
   if (!parsed.success) reportDepartmentError("invalid");
 
-  const result = await createDepartment(supabase, parsed.data);
+  const result = await createDepartment(supabaseClient, parsed.data);
   if (result.status !== "success") reportDepartmentError(result.status);
 
   finishDepartmentAction("created");
 }
 
 export async function updateDepartmentAction(formData: FormData) {
-  const supabase = await requireSuperAdmin();
+  const supabaseClient = await requireSuperAdmin();
   const parsed = getDepartmentInput(formData);
   const id = departmentIdSchema.safeParse(formData.get("id"));
 
   if (!parsed.success || !id.success) reportDepartmentError("invalid");
 
-  const result = await updateDepartment(supabase, id.data, parsed.data);
+  const result = await updateDepartment(supabaseClient, id.data, parsed.data);
   if (result.status !== "success") reportDepartmentError(result.status);
 
   finishDepartmentAction("updated");
 }
 
 export async function deleteDepartmentAction(formData: FormData) {
-  const supabase = await requireSuperAdmin();
+  const supabaseClient = await requireSuperAdmin();
   const id = departmentIdSchema.safeParse(formData.get("id"));
 
   if (!id.success) reportDepartmentError("invalid");
 
-  const result = await deleteDepartmentSafely(supabase, id.data);
+  const result = await deleteDepartmentSafely(supabaseClient, id.data);
   if (result.status !== "success") reportDepartmentError(result.status);
 
   finishDepartmentAction("deleted");
