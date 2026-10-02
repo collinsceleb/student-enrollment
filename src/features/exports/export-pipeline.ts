@@ -162,10 +162,17 @@ export async function buildExportDataset(
   }
 
   const request = parsed.data;
-  const { scope, title } = await resolveScope(supabase, profile, request);
+  const { scope, title: resolvedTitle } = await resolveScope(
+    supabase,
+    profile,
+    request
+  );
   const records = await resolveSelectedRecords(supabase, scope);
   const createdAt = now.toISOString();
 
+  const title = request.title?.trim() || resolvedTitle;
+  const subtitle =
+    request.subtitle?.trim() || `${records.length} student records`;
   const totalSelectedFields = request.fields?.length ?? 8;
 
   return normalizeExportDataset(
@@ -175,7 +182,7 @@ export async function buildExportDataset(
     request.format,
     {
       title,
-      subtitle: `${records.length} student records`,
+      subtitle,
       orientation: getExportOrientation(totalSelectedFields),
       createdAt,
     }

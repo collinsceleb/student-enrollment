@@ -191,6 +191,19 @@ describe("export fields and scopes", () => {
     expect(getExportOrientation(12)).toBe("landscape");
   });
 
+  it("accepts custom title and subtitle metadata for exports", () => {
+    expect(
+      exportRequestSchema.safeParse({
+        format: "docx",
+        scope: "faculty",
+        faculty_id: "11111111-1111-4111-8111-111111111111",
+        title: "Faculty of Computing",
+        subtitle: "2026 Admission Documentation",
+        fields: [{ source: "database", id: "lastName" }],
+      }).success
+    ).toBe(true);
+  });
+
   it("rejects unknown field identifiers and invalid scope shapes", () => {
     expect(
       exportRequestSchema.safeParse({

@@ -31,6 +31,8 @@ export const exportRequestSchema = z
     scope: z.enum(["department", "faculty", "all"]),
     faculty_id: z.uuid().optional(),
     department_id: z.uuid().optional(),
+    title: z.string().trim().min(1).max(160).optional(),
+    subtitle: z.string().trim().min(1).max(160).optional(),
     fields: z.array(exportFieldSchema).min(1).max(32).optional(),
   })
   .strict()

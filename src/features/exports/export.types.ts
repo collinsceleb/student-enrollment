@@ -41,6 +41,8 @@ export type ExportRequest = {
   scope: ExportScopeKind;
   faculty_id?: string;
   department_id?: string;
+  title?: string;
+  subtitle?: string;
   fields?: ExportFieldRequest[];
 };
 

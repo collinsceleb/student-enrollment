@@ -42,6 +42,8 @@ export function StudentExportForm({
   const [facultyId, setFacultyId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [format, setFormat] = useState<"xlsx" | "docx" | "pdf">("xlsx");
+  const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
   const [selectedFields, setSelectedFields] = useState<ExportFieldRequest[]>(
     defaultExportFieldRequests
   );
@@ -139,6 +141,11 @@ export function StudentExportForm({
       scope: resolvedAllData ? "all" : resolvedScope,
       fields: selectedFields,
     };
+
+    const trimmedTitle = title.trim();
+    const trimmedSubtitle = subtitle.trim();
+    if (trimmedTitle) body.title = trimmedTitle;
+    if (trimmedSubtitle) body.subtitle = trimmedSubtitle;
 
     if (mode === "super-admin" && facultyId) {
       body.faculty_id = facultyId;
@@ -279,6 +286,26 @@ export function StudentExportForm({
             <option value="docx">Word</option>
             <option value="pdf">PDF</option>
           </select>
+        </label>
+
+        <label className="block space-y-1.5 sm:col-span-2 xl:col-span-2">
+          <span className="text-sm font-medium text-slate-700">Title</span>
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Faculty of Computing"
+            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          />
+        </label>
+
+        <label className="block space-y-1.5 sm:col-span-2 xl:col-span-2">
+          <span className="text-sm font-medium text-slate-700">Subtitle</span>
+          <input
+            value={subtitle}
+            onChange={(event) => setSubtitle(event.target.value)}
+            placeholder="2026 Admission Documentation"
+            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          />
         </label>
 
         <button
