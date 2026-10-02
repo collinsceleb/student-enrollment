@@ -1,3 +1,4 @@
+import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
 
 import { generateExcelExport } from "@/features/exports/excel.exporter";
@@ -34,5 +35,40 @@ describe("export format adapters", () => {
     expect(Buffer.from(excel).subarray(0, 2).toString()).toBe("PK");
     expect(Buffer.from(word).subarray(0, 2).toString()).toBe("PK");
     expect(Buffer.from(pdf).subarray(0, 4).toString()).toBe("%PDF");
+  });
+
+  it("preserves Excel headers and blank custom columns", async () => {
+    const workbook = new ExcelJS.Workbook();
+    const buffer = await generateExcelExport({
+      ...dataset("xlsx"),
+      fields: [
+        { id: "lastName", source: "database", label: "Surname" },
+        { id: "firstName", source: "database", label: "First Name" },
+        {
+          id: "custom_documentation_status",
+          source: "export-only",
+          label: "Documentation Status",
+        },
+        { id: "custom_remarks", source: "export-only", label: "Remarks" },
+      ],
+      rows: [["MENSAH", "Ama", "", ""]],
+      metadata: {
+        ...dataset("xlsx").metadata,
+        title: "Faculty of Computing",
+        subtitle: "2026 Admission Documentation",
+        orientation: "landscape",
+      },
+    });
+
+    await workbook.xlsx.load(buffer);
+    const sheet = workbook.getWorksheet(1)!;
+
+    expect(sheet.getRow(4).values.slice(1)).toEqual([
+      "Surname",
+      "First Name",
+      "Documentation Status",
+      "Remarks",
+    ]);
+    expect(sheet.getRow(5).values.slice(1)).toEqual(["MENSAH", "Ama", "", ""]);
   });
 });
