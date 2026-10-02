@@ -5,10 +5,16 @@ import {
   generateExportFile,
 } from "@/features/exports/export-generator";
 import { buildExportDataset } from "@/features/exports/export-pipeline";
+import {
+  readLimitedJson,
+  RequestBodyTooLargeError,
+} from "@/lib/server/read-limited-json";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const MAX_EXPORT_BODY_BYTES = 16 * 1024;
 
 function getFilename(dataset: Awaited<ReturnType<typeof buildExportDataset>>) {
   let scope: string;
@@ -47,11 +53,30 @@ export async function POST(request: Request) {
     );
   }
 
+  const contentType = request.headers
+    .get("content-type")
+    ?.split(";", 1)[0]
+    .trim()
+    .toLowerCase();
+  if (contentType !== "application/json") {
+    return Response.json(
+      { error: "unsupported-content-type" },
+      { status: 415, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
   let requestBody: unknown;
   try {
-    requestBody = await request.json();
-  } catch {
-    return Response.json({ error: "invalid-request" }, { status: 400 });
+    requestBody = await readLimitedJson(request, MAX_EXPORT_BODY_BYTES);
+  } catch (error) {
+    const tooLarge = error instanceof RequestBodyTooLargeError;
+    return Response.json(
+      { error: tooLarge ? "request-too-large" : "invalid-request" },
+      {
+        status: tooLarge ? 413 : 400,
+        headers: { "Cache-Control": "no-store" },
+      }
+    );
   }
 
   try {

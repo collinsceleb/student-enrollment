@@ -27,6 +27,13 @@ export class DepartmentNotFoundError extends Error {
   }
 }
 
+export class DuplicateRegistrationNumberError extends Error {
+  constructor() {
+    super("Registration number has already been enrolled.");
+    this.name = "DuplicateRegistrationNumberError";
+  }
+}
+
 export interface StudentFilterParams {
   facultyId: string;
   departmentId?: string;
@@ -58,7 +65,11 @@ export function buildStudentListQueryOptions(
     100,
     Math.max(1, Number.parseInt(String(params.pageSize ?? 20), 10) || 20)
   );
-  const normalizedSearchQuery = params.searchQuery?.trim() ?? "";
+  const normalizedSearchQuery =
+    params.searchQuery
+      ?.replace(/[\u0000-\u001f\u007f]/g, "")
+      .trim()
+      .slice(0, 100) ?? "";
 
   return {
     facultyId: params.facultyId,
@@ -70,6 +81,17 @@ export function buildStudentListQueryOptions(
     offset: (normalizedPage - 1) * normalizedPageSize,
     limit: normalizedPageSize,
   };
+}
+
+export function buildStudentSearchFilter(searchQuery: string): string {
+  const escapedSearch = searchQuery
+    .replace(/\\/g, String.raw`\\`)
+    .replace(/"/g, String.raw`\$&`);
+  const quotedPattern = `"%${escapedSearch}%"`;
+
+  return ["first_name", "last_name", "other_name", "registration_number"]
+    .map((field) => `${field}.ilike.${quotedPattern}`)
+    .join(",");
 }
 
 /**
@@ -139,10 +161,7 @@ export async function createStudent(
 
   if (error) {
     if (error.code === "23505") {
-      // Postgres unique violation
-      throw new Error(
-        `Registration number "${studentData.registration_number}" has already been enrolled.`
-      );
+      throw new DuplicateRegistrationNumberError();
     }
     if (error.code === "23514" || error.code === "23503") {
       // Postgres constraint or trigger violation (integrity defense in depth)
@@ -151,7 +170,7 @@ export async function createStudent(
         studentData.department_id
       );
     }
-    throw new Error(`Failed to create student enrollment: ${error.message}`);
+    throw new Error("Failed to create student enrollment.", { cause: error });
   }
 
   return data;
@@ -307,10 +326,7 @@ export async function getStudentsByFaculty(
   }
 
   if (queryOptions.searchQuery.length > 0) {
-    const term = `%${queryOptions.searchQuery}%`;
-    query = query.or(
-      `first_name.ilike.${term},last_name.ilike.${term},other_name.ilike.${term},registration_number.ilike.${term}`
-    );
+    query = query.or(buildStudentSearchFilter(queryOptions.searchQuery));
   }
 
   const { data, error } = await query;
@@ -358,10 +374,7 @@ export async function getStudentsByFacultyPage(
   }
 
   if (queryOptions.searchQuery.length > 0) {
-    const term = `%${queryOptions.searchQuery}%`;
-    query = query.or(
-      `first_name.ilike.${term},last_name.ilike.${term},other_name.ilike.${term},registration_number.ilike.${term}`
-    );
+    query = query.or(buildStudentSearchFilter(queryOptions.searchQuery));
   }
 
   const { data, count, error } = await query;

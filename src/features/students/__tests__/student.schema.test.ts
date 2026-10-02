@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { studentSchema } from "@/lib/validation/student.schema";
-import { buildStudentListQueryOptions } from "@/features/students/student.service";
+import {
+  buildStudentListQueryOptions,
+  buildStudentSearchFilter,
+} from "@/features/students/student.service";
 import { formatStudentFullName } from "@/types/student";
 
 describe("Student Validation Schema & Formatting", () => {
@@ -123,6 +126,22 @@ describe("Student Validation Schema & Formatting", () => {
     expect(parsed.success).toBe(false);
   });
 
+  it("should reject unexpected fields that could attempt mass assignment", () => {
+    const parsed = studentSchema.safeParse({
+      first_name: "Bob",
+      last_name: "Williams",
+      phone_number: "08022223333",
+      registration_number: "REG/2026/008",
+      faculty_id: validFacultyId,
+      department_id: validDepartmentId,
+      admission_type: "JAMBITE",
+      created_at: "2026-10-02T00:00:00.000Z",
+      role: "SUPER_ADMIN",
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
   it("should format student full name with capitalized surname, comma, followed by other names", () => {
     const fullNameWithOther = formatStudentFullName({
       last_name: "adebayo",
@@ -157,5 +176,13 @@ describe("Student Validation Schema & Formatting", () => {
     });
     expect(options.offset).toBe(50);
     expect(options.limit).toBe(25);
+  });
+
+  it("should escape reserved characters in PostgREST search filters", () => {
+    const filter = buildStudentSearchFilter('"),faculty_id.eq.anything');
+
+    expect(filter).toBe(
+      'first_name.ilike."%\\"),faculty_id.eq.anything%",last_name.ilike."%\\"),faculty_id.eq.anything%",other_name.ilike."%\\"),faculty_id.eq.anything%",registration_number.ilike."%\\"),faculty_id.eq.anything%"'
+    );
   });
 });
