@@ -13,6 +13,7 @@ import { getSuperAdministrators } from "@/features/administration/super-admin-ma
 import { DepartmentManagementPanel } from "@/features/department/department-management-panel";
 import { getDepartmentsByFaculty } from "@/features/department/department.service";
 import { FacultyManagementPanel } from "@/features/faculty/faculty-management-panel";
+import { StudentExportForm } from "@/features/exports/student-export-form";
 import { getStudentsByFacultyPage } from "@/features/students/student.service";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -289,6 +290,11 @@ export default async function AdminDashboardPage({
               </div>
             </div>
           </div>
+          <StudentExportForm
+            mode="faculty-admin"
+            faculties={[]}
+            departments={departments}
+          />
         </div>
       </main>
     );
@@ -512,29 +518,11 @@ export default async function AdminDashboardPage({
           </div>
         </section>
 
-        <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">Exports</h2>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
-            >
-              Export faculties CSV
-            </button>
-            <button
-              type="button"
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
-            >
-              Export students CSV
-            </button>
-            <button
-              type="button"
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
-            >
-              Export department summary
-            </button>
-          </div>
-        </section>
+        <StudentExportForm
+          mode="super-admin"
+          faculties={faculties}
+          departments={departments}
+        />
       </div>
     </main>
   );
