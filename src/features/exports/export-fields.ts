@@ -85,6 +85,28 @@ export const defaultExportFieldRequests: ExportFieldRequest[] = [
   { source: "database", id: "admissionType" },
 ];
 
+export function createCustomExportFieldRequest(
+  label: string
+): ExportFieldRequest {
+  const trimmedLabel = label.trim();
+
+  if (!trimmedLabel) {
+    throw new ExportPipelineError("Export field label cannot be empty.", 400);
+  }
+
+  const slug =
+    trimmedLabel
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "field";
+
+  return {
+    source: "export-only",
+    id: `custom_${slug}`,
+    label: trimmedLabel,
+  };
+}
+
 export function authorizeExportScope(
   profile: Pick<ExportProfile, "role" | "faculty_id">,
   request: Pick<ExportRequest, "scope" | "faculty_id" | "department_id">

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   authorizeExportScope,
+  createCustomExportFieldRequest,
   databaseExportFields,
   normalizeExportDataset,
   resolveExportFields,
@@ -74,6 +75,29 @@ describe("export fields and scopes", () => {
       "Remarks",
     ]);
     expect(dataset.rows).toEqual([["MENSAH", ""]]);
+  });
+
+  it("preserves ordered custom export fields with user labels", () => {
+    const fields: import("@/features/exports/export.types").ExportFieldRequest[] =
+      [
+        { source: "database", id: "lastName" },
+        createCustomExportFieldRequest("Documentation Status"),
+        { source: "database", id: "registrationNumber" },
+      ];
+
+    expect(resolveExportFields(fields)).toEqual([
+      { id: "lastName", source: "database", label: "Surname" },
+      {
+        id: "custom_documentation_status",
+        source: "export-only",
+        label: "Documentation Status",
+      },
+      {
+        id: "registrationNumber",
+        source: "database",
+        label: "Registration Number",
+      },
+    ]);
   });
 
   it("does not allow faculty admins to request another faculty or all-data scope", () => {
