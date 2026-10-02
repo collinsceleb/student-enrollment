@@ -6,6 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { TurnstileWidget } from "@/features/enrollment/turnstile-widget";
 import { studentSchema } from "@/lib/validation/student.schema";
 import type { Department } from "@/types/department";
 import type { Faculty } from "@/types/faculty";
@@ -29,6 +30,9 @@ export function StudentEnrollmentForm({
   const [submissionState, setSubmissionState] = useState<FormSubmissionState>({
     status: "idle",
   });
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
   const {
     register,
@@ -91,7 +95,7 @@ export function StudentEnrollmentForm({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, turnstile_token: turnstileToken }),
       });
 
       const payload = (await response.json().catch(() => ({}))) as {
@@ -118,6 +122,9 @@ export function StudentEnrollmentForm({
         message:
           "Enrollment could not be submitted. Check your connection and try again.",
       });
+    } finally {
+      setTurnstileToken("");
+      setTurnstileResetKey((key) => key + 1);
     }
   }
 
@@ -268,6 +275,12 @@ export function StudentEnrollmentForm({
         </label>
       </div>
 
+      <TurnstileWidget
+        key={turnstileResetKey}
+        siteKey={turnstileSiteKey}
+        onTokenChange={setTurnstileToken}
+      />
+
       {submissionState.status !== "idle" && (
         <div
           className={
@@ -281,7 +294,11 @@ export function StudentEnrollmentForm({
       )}
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={isSubmitting} className="min-w-32">
+        <Button
+          type="submit"
+          disabled={isSubmitting || !turnstileToken || !turnstileSiteKey}
+          className="min-w-32"
+        >
           {isSubmitting ? "Submitting..." : "Submit Enrollment"}
         </Button>
       </div>
