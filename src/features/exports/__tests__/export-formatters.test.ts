@@ -72,6 +72,30 @@ describe("export format adapters", () => {
     expect(sheet.getRow(5).values.slice(1)).toEqual(["MENSAH", "Ama", "", ""]);
   });
 
+  it("preserves multi-line subtitles in Excel exports", async () => {
+    const workbook = new ExcelJS.Workbook();
+    const buffer = await generateExcelExport({
+      ...dataset("xlsx"),
+      fields: [
+        { id: "lastName", source: "database", label: "Surname" },
+        { id: "firstName", source: "database", label: "First Name" },
+      ],
+      rows: [["MENSAH", "Ama"]],
+      metadata: {
+        ...dataset("xlsx").metadata,
+        title: "Faculty of Computing",
+        subtitle: "2026 Admission Documentation\nFaculty of Science",
+        orientation: "landscape",
+      },
+    });
+
+    await workbook.xlsx.load(buffer);
+    const sheet = workbook.getWorksheet(1)!;
+
+    expect(sheet.getCell(2, 1).value).toBe("2026 Admission Documentation");
+    expect(sheet.getCell(3, 1).value).toBe("Faculty of Science");
+  });
+
   it("preserves PDF landscape layout and valid document output", async () => {
     const pdf = await generatePdfExport({
       ...dataset("pdf"),

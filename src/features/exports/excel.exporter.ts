@@ -18,13 +18,27 @@ export async function generateExcelExport(
   });
 
   const columnCount = dataset.fields.length;
+  const subtitleLines = dataset.metadata.subtitle
+    .split(/\r?\n/)
+    .filter((line) => line.trim().length > 0);
+
   sheet.mergeCells(1, 1, 1, columnCount);
   sheet.getCell(1, 1).value = dataset.metadata.title;
   sheet.getCell(1, 1).font = { bold: true, size: 16 };
-  sheet.mergeCells(2, 1, 2, columnCount);
-  sheet.getCell(2, 1).value = dataset.metadata.subtitle;
-  sheet.getCell(2, 1).font = { italic: true, size: 10 };
-  sheet.getCell(2, 1).alignment = { wrapText: true, vertical: "middle" };
+
+  subtitleLines.forEach((line, index) => {
+    const rowNumber = index + 2;
+    sheet.mergeCells(rowNumber, 1, rowNumber, columnCount);
+    const cell = sheet.getCell(rowNumber, 1);
+    cell.value = line;
+    cell.font = { italic: true, size: 10 };
+    cell.alignment = {
+      wrapText: true,
+      vertical: "middle",
+      horizontal: "center",
+    };
+  });
+
   sheet.addRow([]);
   const headerRow = sheet.addRow(dataset.fields.map((field) => field.label));
   headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
