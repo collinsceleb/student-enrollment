@@ -8,6 +8,7 @@ const siteverifyResponseSchema = z.object({
   success: z.boolean(),
   hostname: z.string().optional(),
   action: z.string().optional(),
+  "error-codes": z.array(z.string()).optional(),
 });
 
 export type TurnstileVerification = "verified" | "rejected" | "unavailable";
@@ -53,7 +54,17 @@ export async function verifyTurnstileToken(
 
     const result = siteverifyResponseSchema.safeParse(await response.json());
     if (!result.success) return "unavailable";
-    if (!result.data.success) return "rejected";
+    if (!result.data.success) {
+      const errorCodes = result.data["error-codes"] ?? [];
+      if (
+        errorCodes.includes("missing-input-secret") ||
+        errorCodes.includes("invalid-input-secret") ||
+        errorCodes.includes("internal-error")
+      ) {
+        return "unavailable";
+      }
+      return "rejected";
+    }
     if (
       result.data.hostname !== expectedHostname ||
       result.data.action !== expectedAction

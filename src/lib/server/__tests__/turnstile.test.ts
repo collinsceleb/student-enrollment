@@ -65,6 +65,24 @@ describe("verifyTurnstileToken", () => {
     }
   });
 
+  it("treats an invalid server secret as unavailable", async () => {
+    vi.stubEnv("TURNSTILE_SECRET_KEY", "test-secret");
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        success: false,
+        "error-codes": ["invalid-input-secret"],
+      })
+    );
+
+    await expect(
+      verifyTurnstileToken("token", {
+        expectedHostname: "student.kolawoleafuye.dev",
+        expectedAction: "login",
+        fetcher,
+      })
+    ).resolves.toBe("unavailable");
+  });
+
   it("fails closed when server verification is unavailable", async () => {
     vi.stubEnv("TURNSTILE_SECRET_KEY", "test-secret");
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://enrollment.example.edu");

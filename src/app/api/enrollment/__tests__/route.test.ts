@@ -87,7 +87,9 @@ describe("POST /api/enrollment Turnstile gate", () => {
     );
 
     expect(response.status).toBe(403);
-    expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith("invalid");
+    expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith("invalid", {
+      expectedHostname: "example.test",
+    });
     expect(mocks.createStudent).not.toHaveBeenCalled();
   });
 
@@ -99,7 +101,9 @@ describe("POST /api/enrollment Turnstile gate", () => {
     );
 
     expect(invalidStudentResponse.status).toBe(400);
-    expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith("valid");
+    expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith("valid", {
+      expectedHostname: "example.test",
+    });
     expect(mocks.createStudent).not.toHaveBeenCalled();
   });
 

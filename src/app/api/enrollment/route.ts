@@ -95,7 +95,8 @@ async function prepareEnrollmentRequest(
   }
 
   const verification = await verifyTurnstileToken(
-    envelope.data.turnstile_token
+    envelope.data.turnstile_token,
+    { expectedHostname: new URL(request.url).hostname }
   );
   if (verification === "rejected") {
     return {

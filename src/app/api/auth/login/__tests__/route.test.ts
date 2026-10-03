@@ -63,6 +63,7 @@ describe("POST /api/auth/login", () => {
       "admin@example.com"
     );
     expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith("valid-token", {
+      expectedHostname: "example.test",
       expectedAction: "login",
     });
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({

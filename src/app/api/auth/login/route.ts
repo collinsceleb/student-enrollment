@@ -77,6 +77,7 @@ export async function POST(request: Request) {
   }
 
   const verification = await verifyTurnstileToken(parsed.data.turnstile_token, {
+    expectedHostname: new URL(request.url).hostname,
     expectedAction: "login",
   });
   if (verification === "rejected") {
