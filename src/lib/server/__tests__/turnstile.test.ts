@@ -10,19 +10,22 @@ describe("verifyTurnstileToken", () => {
     vi.unstubAllGlobals();
   });
 
-  it("accepts only a successful enrollment token from the configured host", async () => {
+  it("accepts a successful token from the configured host and expected action", async () => {
     vi.stubEnv("TURNSTILE_SECRET_KEY", "test-secret");
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://enrollment.example.edu");
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
         success: true,
         hostname: "enrollment.example.edu",
-        action: "enrollment",
+        action: "login",
       })
     );
 
     await expect(
-      verifyTurnstileToken("valid-token", { fetcher })
+      verifyTurnstileToken("valid-token", {
+        expectedAction: "login",
+        fetcher,
+      })
     ).resolves.toBe("verified");
     expect(fetcher).toHaveBeenCalledWith(
       "https://challenges.cloudflare.com/turnstile/v0/siteverify",

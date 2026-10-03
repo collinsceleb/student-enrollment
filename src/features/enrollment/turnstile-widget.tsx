@@ -25,11 +25,13 @@ declare global {
 interface TurnstileWidgetProps {
   readonly siteKey: string;
   readonly onTokenChange: (token: string) => void;
+  readonly action?: string;
 }
 
 export function TurnstileWidget({
   siteKey,
   onTokenChange,
+  action = "enrollment",
 }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
@@ -48,7 +50,7 @@ export function TurnstileWidget({
 
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: siteKey,
-      action: "enrollment",
+      action,
       callback: (token) => {
         onTokenChange(token);
         setMessage("Verification complete.");
@@ -70,7 +72,7 @@ export function TurnstileWidget({
         widgetIdRef.current = null;
       }
     };
-  }, [onTokenChange, scriptReady, siteKey]);
+  }, [action, onTokenChange, scriptReady, siteKey]);
 
   if (!siteKey) {
     return (

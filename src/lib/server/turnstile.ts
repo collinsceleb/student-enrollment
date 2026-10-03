@@ -15,6 +15,7 @@ export type TurnstileVerification = "verified" | "rejected" | "unavailable";
 interface TurnstileVerificationOptions {
   readonly secretKey?: string;
   readonly expectedHostname?: string;
+  readonly expectedAction?: string;
   readonly fetcher?: typeof fetch;
 }
 
@@ -25,6 +26,7 @@ export async function verifyTurnstileToken(
   const secretKey = options.secretKey ?? process.env.TURNSTILE_SECRET_KEY;
   const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
   const fetcher = options.fetcher ?? fetch;
+  const expectedAction = options.expectedAction ?? "enrollment";
 
   if (!secretKey) return "unavailable";
   if (token.length === 0 || token.length > 2048) return "rejected";
@@ -54,7 +56,7 @@ export async function verifyTurnstileToken(
     if (!result.data.success) return "rejected";
     if (
       result.data.hostname !== expectedHostname ||
-      result.data.action !== "enrollment"
+      result.data.action !== expectedAction
     ) {
       return "rejected";
     }

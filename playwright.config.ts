@@ -22,7 +22,10 @@ export default defineConfig({
     command: "pnpm exec next dev --port 3001",
     url: `${baseURL}/login`,
     reuseExistingServer: false,
-    env: { PLAYWRIGHT_E2E: "1" },
+    env: {
+      PLAYWRIGHT_E2E: "1",
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: "playwright-test-site-key",
+    },
     timeout: 120_000,
   },
 });

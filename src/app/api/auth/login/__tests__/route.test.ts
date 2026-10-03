@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   consumeRateLimit: vi.fn(),
   getRequestIdentity: vi.fn(() => "203.0.113.8"),
   signInWithPassword: vi.fn(),
+  verifyTurnstileToken: vi.fn(),
 }));
 
 vi.mock("@/lib/server/rate-limit", () => ({
@@ -14,6 +15,9 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { signInWithPassword: mocks.signInWithPassword },
   }),
+}));
+vi.mock("@/lib/server/turnstile", () => ({
+  verifyTurnstileToken: mocks.verifyTurnstileToken,
 }));
 
 import { POST } from "@/app/api/auth/login/route";
@@ -34,11 +38,17 @@ describe("POST /api/auth/login", () => {
       retryAfterSeconds: 0,
     });
     mocks.signInWithPassword.mockResolvedValue({ error: null });
+    mocks.verifyTurnstileToken.mockResolvedValue("verified");
   });
 
   it("checks both IP and normalized email limits before signing in", async () => {
     const response = await POST(
-      request({ email: " ADMIN@example.com ", password: "valid-password" })
+      request({
+        email: " ADMIN@example.com ",
+        password: "valid-password",
+        turnstile_token: "valid-token",
+        website: "",
+      })
     );
 
     expect(response.status).toBe(200);
@@ -52,6 +62,9 @@ describe("POST /api/auth/login", () => {
       "login-email",
       "admin@example.com"
     );
+    expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith("valid-token", {
+      expectedAction: "login",
+    });
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({
       email: "admin@example.com",
       password: "valid-password",
@@ -77,7 +90,12 @@ describe("POST /api/auth/login", () => {
       .mockResolvedValueOnce({ allowed: false, retryAfterSeconds: 30 });
 
     const response = await POST(
-      request({ email: "admin@example.com", password: "bad-password" })
+      request({
+        email: "admin@example.com",
+        password: "bad-password",
+        turnstile_token: "valid-token",
+        website: "",
+      })
     );
 
     expect(response.status).toBe(429);
@@ -90,12 +108,48 @@ describe("POST /api/auth/login", () => {
     });
 
     const response = await POST(
-      request({ email: "admin@example.com", password: "bad-password" })
+      request({
+        email: "admin@example.com",
+        password: "bad-password",
+        turnstile_token: "valid-token",
+        website: "",
+      })
     );
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       message: "Invalid email or password.",
     });
+  });
+
+  it("does not authenticate when the honeypot is filled", async () => {
+    const response = await POST(
+      request({
+        email: "admin@example.com",
+        password: "valid-password",
+        turnstile_token: "valid-token",
+        website: "bot-filled-this",
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.verifyTurnstileToken).not.toHaveBeenCalled();
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("does not authenticate when Turnstile rejects the token", async () => {
+    mocks.verifyTurnstileToken.mockResolvedValue("rejected");
+
+    const response = await POST(
+      request({
+        email: "admin@example.com",
+        password: "valid-password",
+        turnstile_token: "invalid-token",
+        website: "",
+      })
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 });

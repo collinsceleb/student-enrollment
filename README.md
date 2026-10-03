@@ -14,12 +14,16 @@ SUPABASE_SECRET_KEY=your-service-role-secret
 SUPER_ADMIN_EMAIL=admin@example.com
 SUPER_ADMIN_PASSWORD=StrongPassword123
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-turnstile-site-key
+TURNSTILE_SECRET_KEY=your-turnstile-secret-key
 ```
 
 Important:
 - In production, these values should be injected by the host and not committed to the repository.
 - For local development only, a gitignored `.env.local` file is acceptable.
 - Do not expose these values to the browser or commit them to source control.
+- Configure the Turnstile site key and secret for login, password changes, and enrollment.
+- Users who forget their password should contact a super administrator for a temporary password, then sign in and choose a permanent password.
 
 ### 2) Start the app
 When you run the project normally, the bootstrap runs automatically before development and build commands:

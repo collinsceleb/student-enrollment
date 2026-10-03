@@ -8,12 +8,27 @@ import { passwordChangeSchema } from "@/lib/validation/password-change.schema";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { consumeRateLimit } from "@/lib/server/rate-limit";
+import { verifyTurnstileToken } from "@/lib/server/turnstile";
 
 function reportError(code: string): never {
   redirect(`/change-password?error=${code}`);
 }
 
 export async function changeOwnPasswordAction(formData: FormData) {
+  if (formData.get("website")) reportError("invalid");
+
+  const verification = await verifyTurnstileToken(
+    String(formData.get("turnstile_token") ?? ""),
+    { expectedAction: "password_change" }
+  );
+  if (verification !== "verified") {
+    reportError(
+      verification === "unavailable"
+        ? "verification-unavailable"
+        : "verification-failed"
+    );
+  }
+
   const parsed = passwordChangeSchema.safeParse({
     currentPassword: formData.get("currentPassword"),
     newPassword: formData.get("newPassword"),

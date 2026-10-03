@@ -6,6 +6,7 @@ import {
   readLimitedJson,
   RequestBodyTooLargeError,
 } from "@/lib/server/read-limited-json";
+import { verifyTurnstileToken } from "@/lib/server/turnstile";
 import { createClient } from "@/lib/supabase/server";
 
 const MAX_LOGIN_BODY_BYTES = 8 * 1024;
@@ -13,6 +14,8 @@ const loginSchema = z
   .object({
     email: z.string().trim().toLowerCase().pipe(z.email()),
     password: z.string().min(1).max(256),
+    turnstile_token: z.string().min(1).max(2048),
+    website: z.string().max(256),
   })
   .strict();
 
@@ -67,7 +70,23 @@ export async function POST(request: Request) {
 
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) {
-    return errorResponse("Invalid email or password.", 400);
+    return errorResponse("Please complete the verification check.", 400);
+  }
+  if (parsed.data.website) {
+    return errorResponse("Invalid sign-in request.", 400);
+  }
+
+  const verification = await verifyTurnstileToken(parsed.data.turnstile_token, {
+    expectedAction: "login",
+  });
+  if (verification === "rejected") {
+    return errorResponse(
+      "Verification failed. Please complete the check again.",
+      403
+    );
+  }
+  if (verification === "unavailable") {
+    return errorResponse("Verification is temporarily unavailable.", 503);
   }
 
   let emailLimit;
@@ -85,7 +104,10 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
   if (error) return errorResponse("Invalid email or password.", 401);
 
   return NextResponse.json(

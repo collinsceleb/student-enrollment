@@ -1,13 +1,34 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+async function mockTurnstile(page: Page) {
+  await page.route(
+    "https://challenges.cloudflare.com/turnstile/v0/api.js**",
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/javascript",
+        body: `window.turnstile = {
+          render: (_element, options) => {
+            options.callback("test-turnstile-token");
+            return "test-widget";
+          },
+          remove: () => {}
+        };`,
+      });
+    }
+  );
+}
 
 test("login displays generic credential failures returned by the server", async ({
   page,
 }) => {
+  await mockTurnstile(page);
   await page.route("**/api/auth/login", async (route) => {
     expect(route.request().method()).toBe("POST");
     expect(route.request().postDataJSON()).toEqual({
       email: "admin@example.edu",
       password: "incorrect-password",
+      turnstile_token: "test-turnstile-token",
+      website: "",
     });
 
     await route.fulfill({
@@ -35,6 +56,7 @@ test("login displays generic credential failures returned by the server", async 
 test("login presents rate-limit feedback without contacting Supabase directly", async ({
   page,
 }) => {
+  await mockTurnstile(page);
   await page.route("**/api/auth/login", async (route) => {
     await route.fulfill({
       status: 429,
