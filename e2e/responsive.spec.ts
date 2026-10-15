@@ -1,45 +1,40 @@
 import { expect, test } from "@playwright/test";
 
-test("enrollment layout adapts to phone and desktop widths without overflow", async ({
+test("unauthenticated visitors navigating to / are redirected to /login", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(
+    page.getByRole("heading", { name: "Administrator access" })
+  ).toBeVisible();
+});
+
+test("login layout adapts to phone and desktop widths without overflow", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/login");
   await expect(
-    page.getByRole("heading", { name: "Student Enrollment" })
+    page.getByRole("heading", { name: "Administrator access" })
   ).toBeVisible();
 
-  const mobileLayout = await page
-    .locator(".enrollment-layout")
-    .evaluate((node) => {
-      const style = getComputedStyle(node);
-      return {
-        columns: style.gridTemplateColumns.split(" ").length,
-        pageWidth: document.documentElement.scrollWidth,
-        viewportWidth: window.innerWidth,
-      };
-    });
-  expect(mobileLayout.columns).toBe(1);
-  expect(mobileLayout.pageWidth).toBeLessThanOrEqual(
-    mobileLayout.viewportWidth
-  );
+  const mobileWidth = await page.evaluate(() => ({
+    pageWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+  }));
+  expect(mobileWidth.pageWidth).toBeLessThanOrEqual(mobileWidth.viewportWidth);
 
-  await page.screenshot({ path: "test-results/enrollment-mobile.png" });
+  await page.screenshot({ path: "test-results/login-mobile.png" });
 
   await page.setViewportSize({ width: 1440, height: 1000 });
-  const desktopLayout = await page
-    .locator(".enrollment-layout")
-    .evaluate((node) => {
-      const style = getComputedStyle(node);
-      return {
-        columns: style.gridTemplateColumns.split(" ").length,
-        pageWidth: document.documentElement.scrollWidth,
-        viewportWidth: window.innerWidth,
-      };
-    });
-  expect(desktopLayout.columns).toBe(2);
-  expect(desktopLayout.pageWidth).toBeLessThanOrEqual(
-    desktopLayout.viewportWidth
+  const desktopWidth = await page.evaluate(() => ({
+    pageWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+  }));
+  expect(desktopWidth.pageWidth).toBeLessThanOrEqual(
+    desktopWidth.viewportWidth
   );
-  await page.screenshot({ path: "test-results/enrollment-desktop.png" });
+
+  await page.screenshot({ path: "test-results/login-desktop.png" });
 });

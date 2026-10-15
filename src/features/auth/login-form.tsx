@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { HoneypotField } from "@/components/shared/honeypot-field";
@@ -120,13 +119,6 @@ export function LoginForm() {
             {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
-        <Link
-          href="/"
-          className="hover:text-primary mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition"
-        >
-          <ArrowLeft aria-hidden="true" className="size-4" />
-          Return to enrollment
-        </Link>
       </div>
     </main>
   );

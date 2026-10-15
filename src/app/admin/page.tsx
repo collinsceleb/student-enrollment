@@ -120,6 +120,12 @@ export default async function AdminDashboardPage({
 
               <div className="flex items-center gap-2">
                 <Link
+                  href="/"
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  + Enroll student
+                </Link>
+                <Link
                   href="/change-password"
                   className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
                 >
@@ -376,6 +382,12 @@ export default async function AdminDashboardPage({
             </div>
 
             <div className="flex items-center gap-2">
+              <Link
+                href="/"
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                + Enroll student
+              </Link>
               <Link
                 href="/change-password"
                 className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"

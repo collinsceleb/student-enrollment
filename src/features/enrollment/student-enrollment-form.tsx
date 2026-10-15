@@ -6,7 +6,6 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { TurnstileWidget } from "@/features/enrollment/turnstile-widget";
 import { studentSchema } from "@/lib/validation/student.schema";
 import type { Department } from "@/types/department";
 import type { Faculty } from "@/types/faculty";
@@ -21,18 +20,23 @@ type FormSubmissionState =
 interface StudentEnrollmentFormProps {
   readonly faculties: Faculty[];
   readonly departments: Department[];
+  readonly defaultFacultyId?: string;
+  readonly lockFaculty?: boolean;
 }
 
 export function StudentEnrollmentForm({
   faculties,
   departments,
+  defaultFacultyId = "",
+  lockFaculty = false,
 }: StudentEnrollmentFormProps) {
   const [submissionState, setSubmissionState] = useState<FormSubmissionState>({
     status: "idle",
   });
-  const [turnstileToken, setTurnstileToken] = useState("");
-  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+
+  const initialFacultyId = lockFaculty
+    ? defaultFacultyId || (faculties[0]?.id ?? "")
+    : defaultFacultyId;
 
   const {
     register,
@@ -49,7 +53,7 @@ export function StudentEnrollmentForm({
       other_name: "",
       phone_number: "",
       registration_number: "",
-      faculty_id: "",
+      faculty_id: initialFacultyId,
       department_id: "",
       admission_type: "JAMBITE",
     },
@@ -58,16 +62,25 @@ export function StudentEnrollmentForm({
   const selectedFacultyId = useWatch({ control, name: "faculty_id" });
   const selectedDepartmentId = useWatch({ control, name: "department_id" });
 
+  const activeFacultyId =
+    selectedFacultyId || (lockFaculty ? initialFacultyId : "");
+
   const selectableDepartments = useMemo(
     () =>
       departments.filter(
-        (department) => department.faculty_id === selectedFacultyId
+        (department) => department.faculty_id === activeFacultyId
       ),
-    [departments, selectedFacultyId]
+    [departments, activeFacultyId]
   );
 
   useEffect(() => {
-    if (!selectedFacultyId) {
+    if (lockFaculty && initialFacultyId) {
+      setValue("faculty_id", initialFacultyId);
+    }
+  }, [lockFaculty, initialFacultyId, setValue]);
+
+  useEffect(() => {
+    if (!activeFacultyId) {
       setValue("department_id", "");
       return;
     }
@@ -79,42 +92,54 @@ export function StudentEnrollmentForm({
     if (!departmentStillValid) {
       setValue("department_id", "");
     }
-  }, [
-    selectedFacultyId,
-    selectedDepartmentId,
-    selectableDepartments,
-    setValue,
-  ]);
+  }, [activeFacultyId, selectedDepartmentId, selectableDepartments, setValue]);
 
   async function onSubmit(values: StudentFormValues) {
     setSubmissionState({ status: "idle" });
 
     try {
+      const payload = {
+        ...values,
+        faculty_id:
+          lockFaculty && initialFacultyId
+            ? initialFacultyId
+            : values.faculty_id,
+      };
+
       const response = await fetch("/api/enrollment", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ...values, turnstile_token: turnstileToken }),
+        body: JSON.stringify(payload),
       });
 
-      const payload = (await response.json().catch(() => ({}))) as {
+      const result = (await response.json().catch(() => ({}))) as {
         message?: string;
         errors?: Record<string, string[]>;
       };
 
       if (!response.ok) {
         const errorMessage =
-          payload.message ??
+          result.message ??
           "Please correct the highlighted errors and try again.";
         setSubmissionState({ status: "error", message: errorMessage });
         return;
       }
 
-      reset();
+      reset({
+        first_name: "",
+        last_name: "",
+        other_name: "",
+        phone_number: "",
+        registration_number: "",
+        faculty_id: lockFaculty && initialFacultyId ? initialFacultyId : "",
+        department_id: "",
+        admission_type: "JAMBITE",
+      });
       setSubmissionState({
         status: "success",
-        message: payload.message ?? "Enrollment submitted successfully.",
+        message: result.message ?? "Enrollment submitted successfully.",
       });
     } catch {
       setSubmissionState({
@@ -122,9 +147,6 @@ export function StudentEnrollmentForm({
         message:
           "Enrollment could not be submitted. Check your connection and try again.",
       });
-    } finally {
-      setTurnstileToken("");
-      setTurnstileResetKey((key) => key + 1);
     }
   }
 
@@ -211,18 +233,33 @@ export function StudentEnrollmentForm({
 
         <label className="space-y-2">
           <span className="text-sm font-medium text-slate-700">Faculty *</span>
-          <select
-            {...register("faculty_id")}
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-            defaultValue=""
-          >
-            <option value="">Select faculty</option>
-            {faculties.map((faculty) => (
-              <option key={faculty.id} value={faculty.id}>
-                {faculty.name}
-              </option>
-            ))}
-          </select>
+          {lockFaculty ? (
+            <>
+              <input
+                type="hidden"
+                {...register("faculty_id")}
+                value={initialFacultyId}
+              />
+              <div className="flex h-10 w-full items-center rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
+                {faculties.find((f) => f.id === initialFacultyId)?.name ??
+                  faculties[0]?.name ??
+                  "Assigned Faculty"}
+              </div>
+            </>
+          ) : (
+            <select
+              {...register("faculty_id")}
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              defaultValue=""
+            >
+              <option value="">Select faculty</option>
+              {faculties.map((faculty) => (
+                <option key={faculty.id} value={faculty.id}>
+                  {faculty.name}
+                </option>
+              ))}
+            </select>
+          )}
           {errors.faculty_id && (
             <span className="text-sm text-red-600">
               {errors.faculty_id.message}
@@ -238,10 +275,14 @@ export function StudentEnrollmentForm({
             {...register("department_id")}
             className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm transition outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
             value={selectedDepartmentId ?? ""}
-            disabled={!selectedFacultyId || selectableDepartments.length === 0}
+            disabled={!activeFacultyId || selectableDepartments.length === 0}
           >
             <option value="">
-              {selectedFacultyId ? "Select department" : "Choose faculty first"}
+              {activeFacultyId
+                ? selectableDepartments.length === 0
+                  ? "No departments available"
+                  : "Select department"
+                : "Choose faculty first"}
             </option>
             {selectableDepartments.map((department) => (
               <option key={department.id} value={department.id}>
@@ -275,12 +316,6 @@ export function StudentEnrollmentForm({
         </label>
       </div>
 
-      <TurnstileWidget
-        key={turnstileResetKey}
-        siteKey={turnstileSiteKey}
-        onTokenChange={setTurnstileToken}
-      />
-
       {submissionState.status !== "idle" && (
         <div
           className={
@@ -294,11 +329,7 @@ export function StudentEnrollmentForm({
       )}
 
       <div className="flex justify-end">
-        <Button
-          type="submit"
-          disabled={isSubmitting || !turnstileToken || !turnstileSiteKey}
-          className="min-w-32"
-        >
+        <Button type="submit" disabled={isSubmitting} className="min-w-32">
           {isSubmitting ? "Submitting..." : "Submit Enrollment"}
         </Button>
       </div>
