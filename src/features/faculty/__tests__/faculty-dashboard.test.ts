@@ -1,9 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   buildFacultyDashboardSummary,
   filterStudentsForFacultyDashboard,
+  getFacultyDashboardSummary,
 } from "@/features/faculty/faculty.service";
+import type { Database } from "@/types/database.types";
 import type { StudentWithRelations } from "@/types/student";
 
 describe("Faculty dashboard summary", () => {
@@ -111,5 +114,57 @@ describe("Faculty dashboard summary", () => {
         admissionType: "JAMBITE",
       }).map((student) => student.id)
     ).toEqual(["1"]);
+  });
+
+  it("uses exact database counts for the full faculty summary", async () => {
+    const from = vi.fn(() => ({
+      select: vi.fn(() => {
+        const filters = new Map<string, string>();
+        const query = {
+          eq: vi.fn((column: string, value: string) => {
+            filters.set(column, value);
+            return query;
+          }),
+          then: (
+            resolve: (result: { count: number; error: null }) => unknown
+          ) => {
+            const departmentId = filters.get("department_id");
+            const count = departmentId
+              ? departmentId === "dept-1"
+                ? 24
+                : departmentId === "dept-2"
+                  ? 12
+                  : 0
+              : filters.get("admission_type") === "JAMBITE"
+                ? 26
+                : filters.get("admission_type") === "DIRECT_ENTRY"
+                  ? 10
+                  : 36;
+
+            return Promise.resolve({ count, error: null }).then(resolve);
+          },
+        };
+        return query;
+      }),
+    }));
+    const supabase = { from } as unknown as SupabaseClient<Database>;
+
+    await expect(
+      getFacultyDashboardSummary(supabase, "faculty-1", [
+        { id: "dept-1", name: "Computer Science" },
+        { id: "dept-2", name: "Electrical" },
+        { id: "dept-3", name: "Mathematics" },
+      ])
+    ).resolves.toEqual({
+      totalStudents: 36,
+      jambiteCount: 26,
+      directEntryCount: 10,
+      departmentBreakdown: [
+        { departmentName: "Computer Science", total: 24 },
+        { departmentName: "Electrical", total: 12 },
+      ],
+    });
+
+    expect(from).toHaveBeenCalledTimes(6);
   });
 });

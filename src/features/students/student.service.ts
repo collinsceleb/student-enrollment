@@ -43,6 +43,12 @@ export interface StudentFilterParams {
   pageSize?: number;
 }
 
+export interface StudentCountFilters {
+  facultyId?: string;
+  departmentId?: string;
+  admissionType?: AdmissionType;
+}
+
 export interface StudentListQueryOptions {
   facultyId: string;
   departmentId?: string;
@@ -92,6 +98,41 @@ export function buildStudentSearchFilter(searchQuery: string): string {
   return ["first_name", "last_name", "other_name", "registration_number"]
     .map((field) => `${field}.ilike.${quotedPattern}`)
     .join(",");
+}
+
+export async function getStudentCount(
+  supabase: SupabaseClient<Database>,
+  filters: StudentCountFilters = {}
+): Promise<number> {
+  let query = supabase
+    .from("students")
+    .select("id", { count: "exact", head: true });
+
+  if (filters.facultyId) {
+    query = query.eq("faculty_id", filters.facultyId);
+  }
+
+  if (filters.departmentId) {
+    query = query.eq("department_id", filters.departmentId);
+  }
+
+  if (filters.admissionType) {
+    query = query.eq("admission_type", filters.admissionType);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    throw new Error(`Failed to count students: ${error.message}`);
+  }
+
+  if (count === null) {
+    throw new Error(
+      "Failed to count students: the database returned no count."
+    );
+  }
+
+  return count;
 }
 
 /**

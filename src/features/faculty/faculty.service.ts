@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import type { Faculty, FacultyWithDepartments } from "@/types/faculty";
 import type { StudentWithRelations, AdmissionType } from "@/types/student";
+import { getStudentCount } from "@/features/students/student.service";
 
 export interface FacultyDashboardSummary {
   totalStudents: number;
@@ -88,6 +89,38 @@ export function filterStudentsForFacultyDashboard(
 
     return matchesSearch && matchesDepartment && matchesAdmissionType;
   });
+}
+
+export async function getFacultyDashboardSummary(
+  supabase: SupabaseClient<Database>,
+  facultyId: string,
+  departments: Array<{ id: string; name: string }>
+): Promise<FacultyDashboardSummary> {
+  const [totalStudents, jambiteCount, directEntryCount, ...departmentCounts] =
+    await Promise.all([
+      getStudentCount(supabase, { facultyId }),
+      getStudentCount(supabase, { facultyId, admissionType: "JAMBITE" }),
+      getStudentCount(supabase, { facultyId, admissionType: "DIRECT_ENTRY" }),
+      ...departments.map(async (department) => ({
+        departmentName: department.name,
+        total: await getStudentCount(supabase, {
+          facultyId,
+          departmentId: department.id,
+        }),
+      })),
+    ]);
+
+  return {
+    totalStudents,
+    jambiteCount,
+    directEntryCount,
+    departmentBreakdown: departmentCounts
+      .filter(({ total }) => total > 0)
+      .sort(
+        (a, b) =>
+          b.total - a.total || a.departmentName.localeCompare(b.departmentName)
+      ),
+  };
 }
 
 export async function getFaculties(

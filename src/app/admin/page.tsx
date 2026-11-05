@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 
 import {
-  buildFacultyDashboardSummary,
   filterStudentsForFacultyDashboard,
+  getFacultyDashboardSummary,
 } from "@/features/faculty/faculty.service";
 import { getCurrentAdminProfile } from "@/features/auth/auth.service";
 import { FacultyAdminManagementPanel } from "@/features/administration/faculty-admin-management-panel";
@@ -25,7 +25,10 @@ import { getDepartmentsByFaculty } from "@/features/department/department.servic
 import { FacultyManagementPanel } from "@/features/faculty/faculty-management-panel";
 import { StudentExportForm } from "@/features/exports/student-export-form";
 import { StudentDataDeletionPanel } from "@/features/students/student-data-deletion-panel";
-import { getStudentsByFacultyPage } from "@/features/students/student.service";
+import {
+  getStudentCount,
+  getStudentsByFacultyPage,
+} from "@/features/students/student.service";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -117,16 +120,18 @@ export default async function AdminDashboardPage({
     }
 
     const pageSize = 20;
-    const studentPage = await getStudentsByFacultyPage(supabaseClient, {
-      facultyId,
-      departmentId: resolvedSearchParams.department,
-      admissionType: resolvedSearchParams.admissionType as
-        AdmissionType | undefined,
-      searchQuery: resolvedSearchParams.search,
-      page: activePage,
-      pageSize,
-    });
-
+    const [studentPage, summary] = await Promise.all([
+      getStudentsByFacultyPage(supabaseClient, {
+        facultyId,
+        departmentId: resolvedSearchParams.department,
+        admissionType: resolvedSearchParams.admissionType as
+          AdmissionType | undefined,
+        searchQuery: resolvedSearchParams.search,
+        page: activePage,
+        pageSize,
+      }),
+      getFacultyDashboardSummary(supabaseClient, facultyId, departments),
+    ]);
     const filteredStudents = filterStudentsForFacultyDashboard(
       studentPage.items,
       {
@@ -136,8 +141,6 @@ export default async function AdminDashboardPage({
           AdmissionType | undefined,
       }
     );
-
-    const summary = buildFacultyDashboardSummary(filteredStudents);
 
     return (
       <DashboardShell
@@ -470,6 +473,7 @@ export default async function AdminDashboardPage({
     facultyAdmins,
     studentsResult,
     superAdmins,
+    studentCount,
   ] = await Promise.all([
     supabaseClient
       .from("faculties")
@@ -489,6 +493,7 @@ export default async function AdminDashboardPage({
       .order("first_name", { ascending: true })
       .limit(50),
     getSuperAdministrators(adminClient),
+    getStudentCount(supabaseClient),
   ]);
 
   const faculties = facultiesResult.data ?? [];
@@ -498,8 +503,22 @@ export default async function AdminDashboardPage({
   const facultyCount = faculties.length;
   const departmentCount = departments.length;
   const facultyAdminCount = facultyAdmins.length;
-  const studentCount = students.length;
   const superAdminCount = superAdmins.length;
+
+  const facultyStudentCounts = await Promise.all(
+    faculties.map(async (faculty) => ({
+      facultyId: faculty.id,
+      studentCount: await getStudentCount(supabaseClient, {
+        facultyId: faculty.id,
+      }),
+    }))
+  );
+  const studentCountsByFaculty = new Map(
+    facultyStudentCounts.map(({ facultyId, studentCount }) => [
+      facultyId,
+      studentCount,
+    ])
+  );
 
   const facultyBreakdown = faculties.map((faculty) => ({
     ...faculty,
@@ -508,9 +527,7 @@ export default async function AdminDashboardPage({
     ).length,
     adminCount: facultyAdmins.filter((admin) => admin.faculty_id === faculty.id)
       .length,
-    studentCount: students.filter(
-      (student) => student.faculty_id === faculty.id
-    ).length,
+    studentCount: studentCountsByFaculty.get(faculty.id) ?? 0,
   }));
 
   // Auto-detect active tab based on server actions feedback
